@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>MarsBot V5.1 — by Marshall</title>
+<title>MarsBot V5.2 — by Marshall</title>
 
 <!-- React 18 + Babel -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -532,8 +532,8 @@ const DEFAULT_PREFS = {
   stake: '1.00',
   risk: 'Medium',
   strategy: 'HYBRID',
-  minStrength: 72,
-  autoMode: false,
+  minStrength: 60,
+  autoMode: true,
   aiMode: false,
   autoAdjust: true,
   martingale: false,
@@ -665,8 +665,8 @@ function evaluateSignal(prices, strategy, minStrength, aiMode) {
   const voteRatio = maxVotes > 0 ? absVotes / maxVotes : 0;
 
   if (strategy === 'RSI' && rsi != null) {
-    if (rsi < 30) { dir = 'CALL'; }
-    else if (rsi > 70) { dir = 'PUT'; }
+    if (rsi < 40) { dir = 'CALL'; }       // wider zone for synthetic indices
+    else if (rsi > 60) { dir = 'PUT'; }
   } else if (strategy === 'EMA' && emaFast != null && emaSlow != null) {
     dir = emaFast > emaSlow ? 'CALL' : 'PUT';
   } else if (strategy === 'BB' && bb != null) {
@@ -680,7 +680,12 @@ function evaluateSignal(prices, strategy, minStrength, aiMode) {
     else if (votes < 0) dir = 'PUT';
   }
 
-  const rawStrength = Math.round(clamp(45 + voteRatio * 54, 35, 99));
+  // For multi-indicator strategies, strength scales with vote agreement
+  // For single-indicator strategies, use a flat 70 base so they aren't strength-gated
+  const isSingleIndicator = ['RSI','EMA','BB','MACD'].includes(strategy);
+  const rawStrength = isSingleIndicator
+    ? Math.round(clamp(70 + voteRatio * 25, 60, 95))
+    : Math.round(clamp(45 + voteRatio * 54, 35, 99));
   const strength = rawStrength;
 
   if (!dir || strength < minStrength) {
@@ -1028,11 +1033,11 @@ function useMarsBot() {
 
   const applyProfile = useCallback((profile) => {
     if (profile === 'Aggressive') {
-      setPrefs(p => ({ ...p, profile, minStrength: 58, risk: 'High', stake: '2.00', tradeGapSec: 2 }));
+      setPrefs(p => ({ ...p, profile, minStrength: 55, risk: 'High', stake: '2.00', tradeGapSec: 2 }));
     } else if (profile === 'Safe') {
-      setPrefs(p => ({ ...p, profile, minStrength: 82, risk: 'Low', stake: '0.50', tradeGapSec: 5 }));
+      setPrefs(p => ({ ...p, profile, minStrength: 70, risk: 'Low', stake: '0.50', tradeGapSec: 5 }));
     } else if (profile === 'Balanced') {
-      setPrefs(p => ({ ...p, profile, minStrength: 72, risk: 'Medium', stake: '1.00', tradeGapSec: 3 }));
+      setPrefs(p => ({ ...p, profile, minStrength: 62, risk: 'Medium', stake: '1.00', tradeGapSec: 3 }));
     } else {
       setPrefs(p => ({ ...p, profile }));
     }
@@ -1157,7 +1162,7 @@ function TopBar({ running, setRunning, conn, balance, onConnect, onDisconnect, d
         </svg>
         <div>
           <div style={{ fontWeight:700, fontSize:'var(--text-lg)', lineHeight:1.1 }}>MarsBot</div>
-          <div style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>V5.1 · by Marshall</div>
+          <div style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>V5.2 · by Marshall</div>
         </div>
       </div>
 
