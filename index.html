@@ -1,319 +1,1273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MarsBot V9 - Pro</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-body { background:#0A0A0A; color:white; font-family:sans-serif; }
-canvas { width:100%; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MarsBot V10 - Clean AI Trading</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background: #0a0a0a;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .card {
+      background: #151515;
+      border: 1px solid #2a2a2a;
+    }
+
+    .field {
+      width: 100%;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 0.5rem;
+      padding: 0.7rem 0.85rem;
+      color: #ffffff;
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: #4b5563;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid #2a2a2a;
+      background: #151515;
+      font-size: 0.875rem;
+    }
+
+    .dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 9999px;
+      background: #6b7280;
+      flex: 0 0 auto;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 220px;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border-bottom: 1px solid #2a2a2a;
+    }
+  </style>
 </head>
-
 <body>
-<div class="max-w-6xl mx-auto p-4">
+  <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">MarsBot V10</h1>
+        <p class="text-sm text-gray-400">Volatility 50 • Adaptive AI • Clean control panel</p>
+      </div>
 
-<h1 class="text-2xl font-bold mb-4">MarsBot V9 (Pro)</h1>
+      <div id="connectionChip" class="pill">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">Disconnected</span>
+      </div>
+    </div>
 
-<input id="apiToken" placeholder="Deriv API Token"
-class="w-full p-2 bg-black border mb-3">
+    <div class="card rounded-xl p-4 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Deriv App ID</label>
+          <input id="appId" class="field" placeholder="Paste your App ID" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Account ID</label>
+          <input id="accountId" class="field" placeholder="Demo or real account ID" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">API Token</label>
+          <input id="apiToken" class="field" type="password" placeholder="Bearer token / PAT" />
+        </div>
+      </div>
 
-<div class="flex gap-2 mb-3">
-<button onclick="connectDeriv()" class="bg-blue-500 px-4 py-2 rounded">Connect</button>
-<button onclick="toggleBot()" class="bg-green-500 px-4 py-2 rounded">Start / Stop</button>
-<button onclick="resetBot()" class="bg-gray-600 px-4 py-2 rounded">Reset</button>
-</div>
+      <div class="flex flex-wrap gap-2">
+        <button id="connectBtn" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors">Connect</button>
+        <button id="disconnectBtn" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 transition-colors">Disconnect</button>
+        <button id="startBtn" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition-colors">Start Bot</button>
+        <button id="resetBtn" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 transition-colors">Reset</button>
+        <button id="settingsToggle" class="px-4 py-2 rounded-lg bg-[#1f1f1f] hover:bg-[#262626] transition-colors">Settings</button>
 
-<div class="flex gap-3 mb-4 text-sm">
-<label><input type="checkbox" id="confirmTrades"> Confirm Trades</label>
-<select id="martingaleToggle" class="bg-black border px-2">
-<option value="on">Martingale ON</option>
-<option value="off">Martingale OFF</option>
-</select>
-</div>
+        <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
+          <input id="confirmTrades" type="checkbox" class="accent-blue-500" />
+          <span class="text-sm">Confirm trades</span>
+        </label>
 
-<p id="statusMessage" class="text-yellow-400 mb-2"></p>
-<p id="lastTrade" class="text-gray-400 mb-4"></p>
+        <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
+          <input id="soundAlerts" type="checkbox" class="accent-blue-500" checked />
+          <span class="text-sm">Sound alerts</span>
+        </label>
+      </div>
 
-<canvas id="chart" height="120"></canvas>
+      <div id="statusMessage" class="rounded-lg border border-[#2a2a2a] px-4 py-3 text-sm text-gray-300 bg-[#101010]">
+        Ready.
+      </div>
+      <p id="lastTrade" class="text-sm text-gray-400">Last trade: none</p>
+      <p id="connectionInfo" class="text-xs text-gray-500">Market: Volatility 50 (R_50)</p>
+    </div>
 
-<div class="grid grid-cols-2 gap-3 mt-4">
-<div>Trades: <span id="totalTrades">0</span></div>
-<div>Win Rate: <span id="winRate">0%</span></div>
-<div>Profit: <span id="profit">$0</span></div>
-<div>Loss: <span id="dailyLoss">$0</span></div>
-<div>Mode: <span id="modeStatus">NORMAL</span></div>
-<div>AI Confidence: <span id="aiConfidence">0</span></div>
-</div>
+    <div id="settingsPanel" class="card rounded-xl p-4 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Settings & Strategy Optimiser</h2>
+        <p id="optimiserSummary" class="text-xs text-gray-400"></p>
+      </div>
 
-<!-- Trade History -->
-<div class="mt-6">
-<h2 class="font-bold mb-2">Trade History</h2>
-<table class="w-full text-sm">
-<thead>
-<tr class="text-gray-400">
-<th>Time</th><th>Type</th><th>Result</th><th>P/L</th>
-</tr>
-</thead>
-<tbody id="history"></tbody>
-</table>
-</div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Base Stake</label>
+          <input id="baseStake" type="number" min="0.1" step="0.1" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Max Stake</label>
+          <input id="maxStake" type="number" min="0.1" step="0.1" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Session Loss Limit</label>
+          <input id="sessionLossLimit" type="number" min="1" step="1" class="field" />
+        </div>
 
-</div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Cooldown (ms)</label>
+          <input id="cooldownMs" type="number" min="1000" step="500" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Martingale</label>
+          <select id="martingaleToggle" class="field">
+            <option value="off">OFF</option>
+            <option value="on">ON</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Martingale Multiplier</label>
+          <input id="martingaleMultiplier" type="number" min="1.1" max="5" step="0.1" class="field" />
+        </div>
 
-<script>
-// ===== AUDIO =====
-const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-const lossSound = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Martingale Steps</label>
+          <input id="martingaleSteps" type="number" min="0" max="10" step="1" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Max Loss Streak</label>
+          <input id="maxLossStreak" type="number" min="1" max="20" step="1" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">RSI Buy Threshold</label>
+          <input id="rsiBuy" type="number" min="5" max="49" step="1" class="field" />
+        </div>
 
-// ===== STATE =====
-let ws, isRunning=false, isConnected=false, isTradeOpen=false;
-let prices=[], lastTradeTime=0;
-let trades=[];
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">RSI Sell Threshold</label>
+          <input id="rsiSell" type="number" min="51" max="95" step="1" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Volatility Minimum</label>
+          <input id="volMin" type="number" min="0.01" max="10" step="0.01" class="field" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">AI Confidence Threshold</label>
+          <input id="confidenceThreshold" type="number" min="0" max="1" step="0.01" class="field" />
+        </div>
+      </div>
+    </div>
 
-// ===== CONFIG =====
-let config={
-  stake:1,
-  martingale:true,
-  cooldown:5000,
-  lossLimit:30
-};
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">Total Trades</div>
+        <div id="totalTrades" class="text-2xl font-bold">0</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">Win Rate</div>
+        <div id="winRate" class="text-2xl font-bold">0.0%</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">Profit</div>
+        <div id="profit" class="text-2xl font-bold">$0.00</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">Session Loss</div>
+        <div id="sessionLoss" class="text-2xl font-bold">$0.00</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">Current Stake</div>
+        <div id="currentStake" class="text-2xl font-bold">$0.00</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-sm text-gray-400 mb-2">AI Confidence</div>
+        <div id="aiConfidence" class="text-2xl font-bold">0%</div>
+      </div>
+    </div>
 
-// ===== AI =====
-let ai={patterns:{}, lr:0.1, threshold:0};
+    <div class="card rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-semibold">Live Chart</h2>
+        <div class="text-xs text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
+          <span>Mode: <strong id="modeStatus">STOPPED</strong></span>
+          <span>Loss streak: <strong id="lossStreak">0</strong></span>
+          <span>Signal: <strong id="signalLabel">Waiting</strong></span>
+        </div>
+      </div>
+      <canvas id="chart"></canvas>
+    </div>
 
-// ===== METRICS =====
-let metrics={trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"};
+    <div class="card rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Trade History</h2>
+        <p class="text-xs text-gray-500">Last 20 trades</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px]">
+          <thead class="bg-[#0f0f0f]">
+            <tr>
+              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Time</th>
+              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Direction</th>
+              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Stake</th>
+              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Confidence</th>
+              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Pattern</th>
+              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Result</th>
+              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">P/L</th>
+            </tr>
+          </thead>
+          <tbody id="tradeHistory" class="divide-y divide-[#2a2a2a]">
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-gray-500">No trades yet</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-// ===== STATUS =====
-function setStatus(msg,color="yellow"){
-  statusMessage.innerText=msg;
-  statusMessage.className=`text-${color}-400 mb-2`;
-}
+  <script>
+    const STORAGE_KEY = "marsbot_v10_state";
+    const DEFAULT_SYMBOL = "R_50";
 
-// ===== CONNECT =====
-function connectDeriv(){
-  let token=apiToken.value.trim();
-  if(!token) return setStatus("Enter API token","red");
-  if(!confirm("Connect to Deriv?")) return;
+    const el = (id) => document.getElementById(id);
+    const ui = {};
+    [
+      "appId","accountId","apiToken","connectBtn","disconnectBtn","startBtn","resetBtn","settingsToggle",
+      "settingsPanel","confirmTrades","soundAlerts","martingaleToggle","baseStake","maxStake","sessionLossLimit",
+      "cooldownMs","martingaleMultiplier","martingaleSteps","maxLossStreak","rsiBuy","rsiSell","volMin",
+      "confidenceThreshold","statusDot","statusText","statusMessage","lastTrade","connectionInfo",
+      "modeStatus","lossStreak","aiConfidence","totalTrades","winRate","profit","sessionLoss","currentStake",
+      "chart","tradeHistory","signalLabel","optimiserSummary"
+    ].forEach((id) => ui[id] = el(id));
 
-  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+    const defaultSettings = {
+      appId: "",
+      accountId: "",
+      baseStake: 1,
+      maxStake: 100,
+      sessionLossLimit: 30,
+      cooldownMs: 5000,
+      martingaleEnabled: false,
+      martingaleMultiplier: 1.5,
+      martingaleSteps: 2,
+      maxLossStreak: 3,
+      confirmTrades: false,
+      soundAlerts: true
+    };
 
-  ws.onopen=()=>ws.send(JSON.stringify({authorize:token}));
+    const defaultOptimiser = {
+      rsiBuy: 35,
+      rsiSell: 65,
+      volMin: 0.20,
+      confidenceThreshold: 0.00,
+      windowSize: 12
+    };
 
-  ws.onmessage=(msg)=>{
-    let d=JSON.parse(msg.data);
+    let settings = structuredClone(defaultSettings);
+    let optimiser = structuredClone(defaultOptimiser);
 
-    if(d.error) return setStatus(d.error.message,"red");
+    let ws = null;
+    let isConnected = false;
+    let isRunning = false;
+    let isTradeOpen = false;
+    let awaitingProposal = false;
+    let pendingRequestType = null; // "proposal" | "buy"
+    let currentContractId = null;
+    let currentProposalId = null;
+    let currentTrade = null;
+    let cooldownUntil = 0;
+    let lastTradeAt = 0;
+    let requestSeq = 0;
+    let currentStake = 1;
+    let activeAudioContext = null;
 
-    if(d.authorize){
-      isConnected=true;
-      setStatus("Connected","green");
-      subscribeTicks();
+    let prices = [];
+    let tradeMarkers = [];
+    let tradeHistory = [];
+    let aiMemory = { patterns: {} };
+
+    let metrics = {
+      trades: 0,
+      wins: 0,
+      profit: 0,
+      sessionPnL: 0,
+      sessionLoss: 0,
+      lossStreak: 0,
+      martingaleStep: 0,
+      mode: "STOPPED",
+      lastConfidence: 0
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
     }
 
-    if(d.tick){
-      prices.push(d.tick.quote);
-      if(prices.length>100) prices.shift();
+    function num(value, fallback = 0) {
+      const n = Number.parseFloat(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function signedMoney(value) {
+      const n = Number(value) || 0;
+      const sign = n >= 0 ? "+" : "-";
+      return `${sign}$${Math.abs(n).toFixed(2)}`;
+    }
+
+    function money(value) {
+      const n = Number(value) || 0;
+      return `$${Math.abs(n).toFixed(2)}`;
+    }
+
+    function saveState() {
+      try {
+        const payload = {
+          settings: {
+            ...settings,
+            appId: ui.appId.value.trim(),
+            accountId: ui.accountId.value.trim(),
+          },
+          optimiser
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed?.settings) settings = { ...settings, ...parsed.settings };
+        if (parsed?.optimiser) optimiser = { ...optimiser, ...parsed.optimiser };
+      } catch (_) {}
+    }
+
+    function hydrateInputs() {
+      ui.appId.value = settings.appId || "";
+      ui.accountId.value = settings.accountId || "";
+      ui.baseStake.value = settings.baseStake;
+      ui.maxStake.value = settings.maxStake;
+      ui.sessionLossLimit.value = settings.sessionLossLimit;
+      ui.cooldownMs.value = settings.cooldownMs;
+      ui.martingaleToggle.value = settings.martingaleEnabled ? "on" : "off";
+      ui.martingaleMultiplier.value = settings.martingaleMultiplier;
+      ui.martingaleSteps.value = settings.martingaleSteps;
+      ui.maxLossStreak.value = settings.maxLossStreak;
+      ui.confirmTrades.checked = settings.confirmTrades;
+      ui.soundAlerts.checked = settings.soundAlerts;
+
+      ui.rsiBuy.value = optimiser.rsiBuy;
+      ui.rsiSell.value = optimiser.rsiSell;
+      ui.volMin.value = optimiser.volMin;
+      ui.confidenceThreshold.value = optimiser.confidenceThreshold;
+
+      currentStake = settings.baseStake;
+    }
+
+    function syncFromInputs() {
+      settings.appId = ui.appId.value.trim();
+      settings.accountId = ui.accountId.value.trim();
+      settings.baseStake = clamp(num(ui.baseStake.value, 1), 0.1, 100000);
+      settings.maxStake = clamp(num(ui.maxStake.value, 100), settings.baseStake, 100000);
+      settings.sessionLossLimit = clamp(num(ui.sessionLossLimit.value, 30), 1, 100000);
+      settings.cooldownMs = clamp(num(ui.cooldownMs.value, 5000), 1000, 3600000);
+      settings.martingaleEnabled = ui.martingaleToggle.value === "on";
+      settings.martingaleMultiplier = clamp(num(ui.martingaleMultiplier.value, 1.5), 1.1, 5);
+      settings.martingaleSteps = Math.floor(clamp(num(ui.martingaleSteps.value, 2), 0, 10));
+      settings.maxLossStreak = Math.floor(clamp(num(ui.maxLossStreak.value, 3), 1, 20));
+      settings.confirmTrades = ui.confirmTrades.checked;
+      settings.soundAlerts = ui.soundAlerts.checked;
+
+      optimiser.rsiBuy = clamp(num(ui.rsiBuy.value, 35), 5, 49);
+      optimiser.rsiSell = clamp(num(ui.rsiSell.value, 65), 51, 95);
+      optimiser.volMin = clamp(num(ui.volMin.value, 0.2), 0.01, 10);
+      optimiser.confidenceThreshold = clamp(num(ui.confidenceThreshold.value, 0), 0, 1);
+
+      currentStake = clamp(currentStake || settings.baseStake, settings.baseStake, settings.maxStake);
+      updateOptimiserSummary();
+      saveState();
+      updateUI();
+    }
+
+    function setMessage(message, level = "info") {
+      const palette = {
+        info:    { fg: "#d1d5db", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.35)" },
+        success: { fg: "#86efac", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.35)" },
+        warn:    { fg: "#fde68a", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)" },
+        error:   { fg: "#fca5a5", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.35)" }
+      };
+      const c = palette[level] || palette.info;
+      ui.statusMessage.textContent = message;
+      ui.statusMessage.style.color = c.fg;
+      ui.statusMessage.style.background = c.bg;
+      ui.statusMessage.style.borderColor = c.border;
+    }
+
+    function setChip(text, level = "info") {
+      const palette = {
+        info:    { dot: "#60a5fa", bg: "#151515", border: "#2a2a2a", fg: "#ffffff" },
+        success: { dot: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.35)", fg: "#ffffff" },
+        warn:    { dot: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.35)", fg: "#ffffff" },
+        error:   { dot: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.35)", fg: "#ffffff" }
+      };
+      const c = palette[level] || palette.info;
+      ui.statusText.textContent = text;
+      ui.statusDot.style.background = c.dot;
+      el("connectionChip").style.background = c.bg;
+      el("connectionChip").style.borderColor = c.border;
+      el("connectionChip").style.color = c.fg;
+    }
+
+    function playTone(freq, duration = 0.12, type = "sine", gainValue = 0.025) {
+      if (!settings.soundAlerts) return;
+      try {
+        activeAudioContext = activeAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = activeAudioContext;
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = freq;
+        gainNode.gain.value = gainValue;
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function winBeep() {
+      playTone(880, 0.10, "sine", 0.03);
+      setTimeout(() => playTone(1320, 0.10, "sine", 0.025), 120);
+    }
+
+    function lossBeep() {
+      playTone(220, 0.14, "triangle", 0.03);
+    }
+
+    function resizeChart() {
+      const canvas = ui.chart;
+      const parent = canvas.parentElement;
+      const cssWidth = Math.max(300, parent.clientWidth);
+      const cssHeight = 220;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.style.height = `${cssHeight}px`;
+      canvas.width = Math.floor(cssWidth * dpr);
+      canvas.height = Math.floor(cssHeight * dpr);
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       drawChart();
-      if(isRunning) runBot();
     }
 
-    if(d.buy){
-      isTradeOpen=true;
-      subscribeContract(d.buy.contract_id);
+    function EMA(period, data) {
+      if (!Array.isArray(data) || data.length === 0) return 0;
+      const k = 2 / (period + 1);
+      let ema = data[0];
+      for (let i = 1; i < data.length; i++) {
+        ema = data[i] * k + ema * (1 - k);
+      }
+      return ema;
     }
 
-    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
-      handleResult(d.proposal_open_contract);
-      isTradeOpen=false;
+    function RSI(data, period = 14) {
+      if (!Array.isArray(data) || data.length < period + 1) return 50;
+      let gains = 0;
+      let losses = 0;
+      const start = data.length - period - 1;
+      for (let i = start; i < data.length - 1; i++) {
+        const diff = data[i + 1] - data[i];
+        if (diff > 0) gains += diff;
+        else losses -= diff;
+      }
+      const rs = gains / (losses || 1);
+      return 100 - (100 / (1 + rs));
     }
-  };
-}
 
-// ===== SUBSCRIBE =====
-function subscribeTicks(){
-  ws.send(JSON.stringify({ticks:"R_50",subscribe:1}));
-}
-
-function subscribeContract(id){
-  ws.send(JSON.stringify({
-    proposal_open_contract:1,
-    contract_id:id,
-    subscribe:1
-  }));
-}
-
-// ===== INDICATORS =====
-function EMA(p,d){
-  if(d.length===0) return 0;
-  let k=2/(p+1), e=d[0];
-  for(let i=1;i<d.length;i++) e=d[i]*k+e*(1-k);
-  return e;
-}
-
-function RSI(d,p=14){
-  if(d.length<p) return 50;
-  let g=0,l=0;
-  for(let i=d.length-p;i<d.length-1;i++){
-    let diff=d[i+1]-d[i];
-    if(diff>0) g+=diff; else l-=diff;
-  }
-  return 100-(100/(1+(g/(l||1))));
-}
-
-// ===== SIGNAL =====
-function getSignal(){
-  if(prices.length<30) return null;
-
-  let emaF=EMA(9,prices);
-  let emaS=EMA(21,prices);
-  let rsi=RSI(prices);
-  let vol=Math.abs(prices.at(-1)-prices.at(-2));
-
-  if(vol<0.2) return null;
-
-  if(rsi<35 && emaF>emaS) return "CALL";
-  if(rsi>65 && emaF<emaS) return "PUT";
-
-  return null;
-}
-
-// ===== BOT =====
-function runBot(){
-  if(isTradeOpen) return;
-
-  if(!isConnected){
-    setStatus("Not connected","red");
-    return;
-  }
-
-  let now=Date.now();
-  if(now-lastTradeTime<config.cooldown) return;
-
-  if(metrics.loss>=config.lossLimit){
-    metrics.mode="STOPPED";
-    isRunning=false;
-    setStatus("Session stopped","red");
-    updateUI();
-    return;
-  }
-
-  let sig=getSignal();
-  if(!sig) return;
-
-  if(confirmTrades.checked && !confirm(`Execute ${sig}?`)) return;
-
-  placeTrade(sig);
-  lastTradeTime=now;
-}
-
-// ===== TRADE =====
-function placeTrade(dir){
-  ws.send(JSON.stringify({
-    buy:1,
-    price:config.stake,
-    parameters:{
-      amount:config.stake,
-      basis:"stake",
-      contract_type:dir,
-      currency:"USD",
-      duration:1,
-      duration_unit:"m",
-      symbol:"R_50"
+    function avgAbsChange(windowSize = 8) {
+      if (prices.length < 2) return 0;
+      const start = Math.max(1, prices.length - windowSize);
+      let total = 0;
+      let count = 0;
+      for (let i = start; i < prices.length; i++) {
+        total += Math.abs(prices[i] - prices[i - 1]);
+        count++;
+      }
+      return count ? total / count : 0;
     }
-  }));
-}
 
-// ===== RESULT =====
-function handleResult(c){
-  let p = Number(c.profit) || 0;
+    function getPatternKey() {
+      if (prices.length < 8) return "boot";
+      const start = Math.max(1, prices.length - 8);
+      let seq = "";
+      for (let i = start; i < prices.length; i++) {
+        const diff = prices[i] - prices[i - 1];
+        seq += diff > 0 ? "U" : diff < 0 ? "D" : "F";
+      }
+      const vol = avgAbsChange(8);
+      const bucket = vol < 0.15 ? "L" : vol < 0.35 ? "M" : "H";
+      return `${seq}_${bucket}`;
+    }
 
-  metrics.trades++;
-  if(p>0){ metrics.wins++; winSound.play(); }
-  else lossSound.play();
+    function ensurePattern(patternKey) {
+      if (!aiMemory.patterns[patternKey]) {
+        aiMemory.patterns[patternKey] = {
+          CALL: { wins: 0, losses: 0 },
+          PUT: { wins: 0, losses: 0 }
+        };
+      }
+      return aiMemory.patterns[patternKey];
+    }
 
-  metrics.profit+=p;
-  metrics.loss=Math.max(0,metrics.loss+p);
+    function confidenceFor(patternKey, direction, rsi, emaFast, emaSlow, vol) {
+      const pattern = ensurePattern(patternKey);
+      const stats = pattern[direction];
+      const total = stats.wins + stats.losses;
 
-  lastTrade.innerText=`Last Trade: ${p>0?"WIN":"LOSS"} (${p.toFixed(2)})`;
+      let confidence = 0.5;
+      const trendStrength = Math.abs(emaFast - emaSlow) / Math.max(1, prices[prices.length - 1]);
+      confidence += clamp(trendStrength * 8, 0, 0.12);
 
-  trades.unshift({
-    time:new Date().toLocaleTimeString(),
-    type:c.contract_type,
-    result:p>0?"WIN":"LOSS",
-    profit:p.toFixed(2)
-  });
+      const rsiEdge = direction === "CALL" ? Math.max(0, 50 - rsi) : Math.max(0, rsi - 50);
+      confidence += clamp(rsiEdge / 100, 0, 0.15);
 
-  if(trades.length>20) trades.pop();
+      if (total > 0) {
+        confidence += clamp(((stats.wins - stats.losses) / total) * 0.28, -0.28, 0.28);
+      }
 
-  updateHistory();
-  updateUI();
-}
+      if (vol > optimiser.volMin * 2) confidence += 0.05;
+      return clamp(confidence, 0, 1);
+    }
 
-// ===== HISTORY =====
-function updateHistory(){
-  history.innerHTML=trades.map(t=>`
-    <tr>
-      <td>${t.time}</td>
-      <td>${t.type}</td>
-      <td>${t.result}</td>
-      <td>${t.profit}</td>
-    </tr>
-  `).join("");
-}
+    function evaluateSignal() {
+      if (prices.length < 30) return null;
 
-// ===== RESET =====
-function resetBot(){
-  if(!confirm("Reset bot?")) return;
-  metrics={trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"};
-  trades=[];
-  updateUI();
-  updateHistory();
-  setStatus("Reset complete","green");
-}
+      const emaFast = EMA(9, prices);
+      const emaSlow = EMA(21, prices);
+      const rsi = RSI(prices, 14);
+      const vol = avgAbsChange(8);
+      const patternKey = getPatternKey();
 
-// ===== CHART =====
-function drawChart(){
-  let c=chart, ctx=c.getContext("2d");
-  ctx.clearRect(0,0,c.width,c.height);
+      let direction = null;
+      if (rsi <= optimiser.rsiBuy && emaFast > emaSlow) direction = "CALL";
+      if (rsi >= optimiser.rsiSell && emaFast < emaSlow) direction = "PUT";
 
-  if(prices.length<2) return;
+      if (!direction) return null;
+      if (vol < optimiser.volMin) return null;
 
-  let max=Math.max(...prices), min=Math.min(...prices);
-  let range=max-min||1;
+      const confidence = confidenceFor(patternKey, direction, rsi, emaFast, emaSlow, vol);
+      if (confidence < optimiser.confidenceThreshold) return null;
 
-  ctx.beginPath();
-  prices.forEach((p,i)=>{
-    let x=(i/prices.length)*c.width;
-    let y=c.height-((p-min)/range)*c.height;
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-}
+      return {
+        direction,
+        confidence,
+        patternKey,
+        rsi,
+        emaFast,
+        emaSlow,
+        vol
+      };
+    }
 
-// ===== UI =====
-function updateUI(){
-  totalTrades.innerText=metrics.trades;
-  winRate.innerText=metrics.trades?((metrics.wins/metrics.trades)*100).toFixed(1)+"%":"0%";
-  profit.innerText="$"+metrics.profit.toFixed(2);
-  dailyLoss.innerText="$"+metrics.loss.toFixed(2);
-  modeStatus.innerText=metrics.mode;
-}
+    function updateOptimiserSummary() {
+      ui.optimiserSummary.textContent =
+        `RSI ${optimiser.rsiBuy}/${optimiser.rsiSell} • Vol ≥ ${optimiser.volMin.toFixed(2)} • AI ≥ ${(optimiser.confidenceThreshold * 100).toFixed(0)}%`;
+    }
 
-// ===== CONTROL =====
-function toggleBot(){
-  if(!isConnected) return setStatus("Connect first","red");
-  if(!confirm(isRunning?"Stop bot?":"Start bot?")) return;
+    function updateModeState() {
+      if (metrics.mode === "COOLDOWN" && Date.now() >= cooldownUntil) {
+        metrics.mode = isRunning ? "NORMAL" : "STOPPED";
+        cooldownUntil = 0;
+      }
+    }
 
-  isRunning=!isRunning;
-  setStatus(isRunning?"Bot running":"Bot stopped","green");
-}
+    function startCooldown(reason, durationMs = 60000) {
+      cooldownUntil = Date.now() + durationMs;
+      metrics.mode = "COOLDOWN";
+      setChip("Cooldown", "warn");
+      setMessage(reason, "warn");
+    }
 
-martingaleToggle.onchange=e=>{
-  config.martingale=e.target.value==="on";
-};
-</script>
+    function tuneOptimiser() {
+      if (optimiser.windowSize < 2) return;
+
+      const recent = optimiserHistory.slice(-optimiser.windowSize);
+      if (recent.length < 8) return;
+
+      const wins = recent.filter((x) => x > 0).length;
+      const winRate = wins / recent.length;
+      const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+
+      if (avg < 0 || winRate < 0.45) {
+        optimiser.rsiBuy = clamp(optimiser.rsiBuy - 1, 5, 49);
+        optimiser.rsiSell = clamp(optimiser.rsiSell + 1, 51, 95);
+        optimiser.volMin = clamp(optimiser.volMin + 0.01, 0.01, 10);
+        optimiser.confidenceThreshold = clamp(optimiser.confidenceThreshold + 0.03, 0, 1);
+      } else if (avg > 0 && winRate > 0.60) {
+        optimiser.rsiBuy = clamp(optimiser.rsiBuy + 1, 5, 49);
+        optimiser.rsiSell = clamp(optimiser.rsiSell - 1, 51, 95);
+        optimiser.volMin = clamp(optimiser.volMin - 0.01, 0.01, 10);
+        optimiser.confidenceThreshold = clamp(optimiser.confidenceThreshold - 0.02, 0, 1);
+      }
+
+      ui.rsiBuy.value = optimiser.rsiBuy;
+      ui.rsiSell.value = optimiser.rsiSell;
+      ui.volMin.value = optimiser.volMin.toFixed(2);
+      ui.confidenceThreshold.value = optimiser.confidenceThreshold.toFixed(2);
+      updateOptimiserSummary();
+      saveState();
+    }
+
+    const optimiserHistory = [];
+
+    function renderHistory() {
+      if (!tradeHistory.length) {
+        ui.tradeHistory.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No trades yet</td></tr>`;
+        return;
+      }
+
+      ui.tradeHistory.innerHTML = tradeHistory.slice(0, 20).map((t) => {
+        const resultColor = t.result === "WIN" ? "#4ade80" : "#f87171";
+        const profitColor = t.profit >= 0 ? "#4ade80" : "#f87171";
+        const profitSign = t.profit >= 0 ? "+" : "-";
+        return `
+          <tr>
+            <td class="px-4 py-3 text-sm text-gray-300">${t.time}</td>
+            <td class="px-4 py-3 text-sm text-gray-300">${t.direction}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-300">${money(t.stake)}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-300">${(t.confidence * 100).toFixed(0)}%</td>
+            <td class="px-4 py-3 text-sm text-gray-300">${t.pattern}</td>
+            <td class="px-4 py-3 text-sm text-right font-medium" style="color:${resultColor};">${t.result}</td>
+            <td class="px-4 py-3 text-sm text-right font-medium" style="color:${profitColor};">${profitSign}${money(Math.abs(t.profit)).slice(1)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function drawChart() {
+      const canvas = ui.chart;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#0a0a0a";
+      ctx.fillRect(0, 0, w, h);
+
+      if (prices.length < 2) {
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "14px sans-serif";
+        ctx.fillText("Waiting for price data...", 18, 28);
+        return;
+      }
+
+      const padding = 16;
+      const max = Math.max(...prices);
+      const min = Math.min(...prices);
+      const range = max - min || 1;
+
+      // subtle grid
+      ctx.strokeStyle = "rgba(255,255,255,0.05)";
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        const y = padding + ((h - padding * 2) / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(w - padding, y);
+        ctx.stroke();
+      }
+
+      // line
+      ctx.strokeStyle = "#60a5fa";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      prices.forEach((price, i) => {
+        const x = padding + (i / (prices.length - 1)) * (w - padding * 2);
+        const y = h - padding - ((price - min) / range) * (h - padding * 2);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // markers
+      tradeMarkers.forEach((marker) => {
+        if (marker.index < 0 || marker.index >= prices.length) return;
+        const x = padding + (marker.index / (prices.length - 1)) * (w - padding * 2);
+        const y = h - padding - ((prices[marker.index] - min) / range) * (h - padding * 2);
+        const color = marker.result === "WIN" ? "#22c55e" : marker.result === "LOSS" ? "#ef4444" : "#f59e0b";
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // current price label
+      const last = prices[prices.length - 1];
+      ctx.fillStyle = "#d1d5db";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(`Last: ${last.toFixed(2)}`, padding, 14);
+    }
+
+    function setTradeSignalLabel(signal) {
+      if (!signal) {
+        ui.signalLabel.textContent = "Waiting";
+        return;
+      }
+      ui.signalLabel.textContent = `${signal.direction} • ${(signal.confidence * 100).toFixed(0)}%`;
+      ui.aiConfidence.textContent = `${(signal.confidence * 100).toFixed(0)}%`;
+    }
+
+    function updateUI() {
+      updateModeState();
+
+      ui.totalTrades.textContent = metrics.trades;
+      ui.winRate.textContent = metrics.trades ? `${((metrics.wins / metrics.trades) * 100).toFixed(1)}%` : "0.0%";
+      ui.profit.textContent = signedMoney(metrics.profit);
+      ui.profit.style.color = metrics.profit >= 0 ? "#4ade80" : "#f87171";
+      ui.sessionLoss.textContent = money(metrics.sessionLoss);
+      ui.sessionLoss.style.color = "#f87171";
+      ui.currentStake.textContent = money(currentStake);
+      ui.lossStreak.textContent = metrics.lossStreak;
+      ui.modeStatus.textContent = metrics.mode;
+      ui.aiConfidence.textContent = `${(metrics.lastConfidence * 100).toFixed(0)}%`;
+      ui.lastTrade.textContent = currentTrade
+        ? `Last trade: ${currentTrade.direction} | ${currentTrade.result || "pending"}${currentTrade.profit !== undefined ? ` (${signedMoney(currentTrade.profit)})` : ""}`
+        : "Last trade: none";
+
+      ui.connectionInfo.textContent = `Market: ${DEFAULT_SYMBOL} • ` +
+        (isConnected ? "Trading connection ready" : "Not connected");
+
+      updateOptimiserSummary();
+      renderHistory();
+      drawChart();
+
+      if (metrics.mode === "NORMAL" && isRunning && isConnected) {
+        setChip("Running", "success");
+      } else if (metrics.mode === "COOLDOWN") {
+        setChip("Cooldown", "warn");
+      } else if (metrics.mode === "STOPPED" && isConnected) {
+        setChip("Stopped", "error");
+      } else if (!isConnected) {
+        setChip("Disconnected", "info");
+      }
+    }
+
+    function addPriceTick(price) {
+      prices.push(price);
+      if (prices.length > 200) prices.shift();
+      drawChart();
+    }
+
+    function openSocket(wsUrl) {
+      if (ws) {
+        try { ws.close(); } catch (_) {}
+      }
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        isConnected = true;
+        metrics.mode = isRunning ? "NORMAL" : "STOPPED";
+        setChip(isRunning ? "Running" : "Connected", isRunning ? "success" : "info");
+        setMessage("Authenticated WebSocket connected. Subscribing to Volatility 50 ticks...", "success");
+        subscribeTicks();
+        updateUI();
+      };
+
+      ws.onmessage = (evt) => {
+        let data;
+        try {
+          data = JSON.parse(evt.data);
+        } catch (_) {
+          return;
+        }
+
+        if (data.error) {
+          awaitingProposal = false;
+          pendingRequestType = null;
+          isTradeOpen = false;
+          currentProposalId = null;
+          setMessage(data.error.message || "Deriv API error.", "error");
+          updateUI();
+          return;
+        }
+
+        if (data.tick && typeof data.tick.quote === "number") {
+          addPriceTick(data.tick.quote);
+          if (isRunning) runBot();
+          return;
+        }
+
+        if (data.proposal) {
+          handleProposalResponse(data.proposal);
+          return;
+        }
+
+        if (data.buy) {
+          handleBuyResponse(data.buy);
+          return;
+        }
+
+        if (data.proposal_open_contract) {
+          handleContractUpdate(data.proposal_open_contract);
+          return;
+        }
+      };
+
+      ws.onclose = () => {
+        isConnected = false;
+        isTradeOpen = false;
+        awaitingProposal = false;
+        pendingRequestType = null;
+        currentProposalId = null;
+        setChip("Disconnected", "info");
+        setMessage("WebSocket disconnected.", "warn");
+        updateUI();
+      };
+
+      ws.onerror = () => {
+        setMessage("WebSocket error occurred.", "error");
+      };
+    }
+
+    async function connectDeriv() {
+      syncFromInputs();
+
+      if (!settings.appId || !settings.accountId || !ui.apiToken.value.trim()) {
+        setMessage("App ID, Account ID, and API token are required.", "error");
+        return;
+      }
+
+      if (!confirm("Connect MarsBot to Deriv using the entered account?")) return;
+
+      setMessage("Requesting authenticated WebSocket URL...", "info");
+
+      try {
+        const response = await fetch(
+          `https://api.derivws.com/trading/v1/options/accounts/${encodeURIComponent(settings.accountId)}/otp`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${ui.apiToken.value.trim()}`,
+              "Deriv-App-ID": settings.appId,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          const msg = payload?.message || payload?.error?.message || `OTP request failed (${response.status})`;
+          throw new Error(msg);
+        }
+
+        const wsUrl = payload?.data?.url;
+        if (!wsUrl) {
+          throw new Error("OTP response did not include a WebSocket URL.");
+        }
+
+        openSocket(wsUrl);
+      } catch (err) {
+        isConnected = false;
+        setChip("Disconnected", "error");
+        setMessage(err.message || "Unable to connect.", "error");
+      }
+    }
+
+    function disconnectDeriv() {
+      if (!confirm("Disconnect MarsBot from Deriv?")) return;
+
+      try {
+        if (ws) ws.close();
+      } catch (_) {}
+
+      ws = null;
+      isConnected = false;
+      isRunning = false;
+      isTradeOpen = false;
+      awaitingProposal = false;
+      pendingRequestType = null;
+      currentProposalId = null;
+      currentTrade = null;
+      metrics.mode = "STOPPED";
+      setChip("Disconnected", "info");
+      setMessage("Disconnected.", "warn");
+      updateUI();
+    }
+
+    function subscribeTicks() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      ws.send(JSON.stringify({
+        ticks: DEFAULT_SYMBOL,
+        subscribe: 1,
+        req_id: ++requestSeq
+      }));
+    }
+
+    function requestProposal(signal) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      awaitingProposal = true;
+      pendingRequestType = "proposal";
+      currentTrade = {
+        direction: signal.direction,
+        confidence: signal.confidence,
+        pattern: signal.patternKey,
+        stake: currentStake,
+        entryIndex: Math.max(0, prices.length - 1)
+      };
+
+      ws.send(JSON.stringify({
+        proposal: 1,
+        amount: currentStake,
+        basis: "stake",
+        contract_type: signal.direction,
+        currency: "USD",
+        duration: 1,
+        duration_unit: "m",
+        symbol: DEFAULT_SYMBOL,
+        req_id: ++requestSeq
+      }));
+
+      setMessage(`Requesting proposal for ${signal.direction}...`, "info");
+    }
+
+    function handleProposalResponse(proposal) {
+      if (!awaitingProposal || pendingRequestType !== "proposal" || !currentTrade) return;
+
+      awaitingProposal = false;
+      pendingRequestType = null;
+
+      const proposalId = proposal?.id;
+      const askPrice = Number(proposal?.ask_price) || currentStake;
+
+      if (!proposalId) {
+        setMessage("Proposal response did not include an ID.", "error");
+        return;
+      }
+
+      currentProposalId = proposalId;
+      pendingRequestType = "buy";
+
+      ws.send(JSON.stringify({
+        buy: proposalId,
+        price: askPrice,
+        req_id: ++requestSeq
+      }));
+
+      setMessage(`Buying ${currentTrade.direction} contract...`, "info");
+    }
+
+    function handleBuyResponse(buy) {
+      pendingRequestType = null;
+
+      const contractId = buy?.contract_id;
+      if (!contractId) {
+        isTradeOpen = false;
+        setMessage("Buy response did not include a contract ID.", "error");
+        return;
+      }
+
+      currentContractId = contractId;
+      isTradeOpen = true;
+
+      ws.send(JSON.stringify({
+        proposal_open_contract: 1,
+        contract_id: currentContractId,
+        subscribe: 1,
+        req_id: ++requestSeq
+      }));
+
+      lastTradeAt = Date.now();
+      setMessage(`Trade opened. Contract ID: ${currentContractId}`, "success");
+      if (currentTrade) currentTrade.status = "OPEN";
+      updateUI();
+    }
+
+    function updateAIForTrade(patternKey, direction, won) {
+      const pattern = ensurePattern(patternKey);
+      const bucket = pattern[direction];
+      if (won) bucket.wins += 1;
+      else bucket.losses += 1;
+    }
+
+    function finalizeTrade(contract) {
+      const profit = Number(contract?.profit ?? 0);
+      const won = profit > 0;
+      const direction = currentTrade?.direction || contract?.contract_type || "CALL";
+      const patternKey = currentTrade?.pattern || getPatternKey();
+      const stake = Number(currentTrade?.stake ?? currentStake);
+      const confidence = Number(currentTrade?.confidence ?? metrics.lastConfidence);
+
+      metrics.trades += 1;
+      if (won) metrics.wins += 1;
+      metrics.profit += profit;
+
+      metrics.sessionPnL += profit;
+      metrics.sessionLoss = Math.max(0, -metrics.sessionPnL);
+
+      metrics.lossStreak = won ? 0 : metrics.lossStreak + 1;
+      metrics.martingaleStep = won ? 0 : metrics.martingaleStep;
+
+      updateAIForTrade(patternKey, direction, won);
+
+      optimiserHistory.push(profit);
+      if (optimiserHistory.length > 40) optimiserHistory.shift();
+
+      if (won) {
+        winBeep();
+      } else {
+        lossBeep();
+      }
+
+      tradeHistory.unshift({
+        time: new Date().toLocaleTimeString(),
+        direction,
+        stake,
+        confidence,
+        pattern: patternKey,
+        result: won ? "WIN" : "LOSS",
+        profit
+      });
+      if (tradeHistory.length > 20) tradeHistory.length = 20;
+
+      tradeMarkers.push({
+        index: currentTrade?.entryIndex ?? Math.max(0, prices.length - 1),
+        result: won ? "WIN" : "LOSS",
+        direction
+      });
+      if (tradeMarkers.length > 20) tradeMarkers.shift();
+
+      if (settings.martingaleEnabled) {
+        if (won) {
+          currentStake = settings.baseStake;
+          metrics.martingaleStep = 0;
+        } else {
+          if (metrics.martingaleStep < settings.martingaleSteps) {
+            currentStake = clamp(currentStake * settings.martingaleMultiplier, settings.baseStake, settings.maxStake);
+            metrics.martingaleStep += 1;
+          } else {
+            currentStake = settings.baseStake;
+            metrics.martingaleStep = 0;
+          }
+        }
+      } else {
+        currentStake = settings.baseStake;
+        metrics.martingaleStep = 0;
+      }
+
+      metrics.lastConfidence = confidence;
+      isTradeOpen = false;
+      currentContractId = null;
+      currentProposalId = null;
+      currentTrade = null;
+
+      if (metrics.lossStreak >= settings.maxLossStreak) {
+        startCooldown(`Loss streak reached ${settings.maxLossStreak}. Cooling down now.`, 60000);
+      } else if (metrics.sessionLoss >= settings.sessionLossLimit) {
+        metrics.mode = "STOPPED";
+        isRunning = false;
+        setChip("Stopped", "error");
+        setMessage("Session loss limit reached. Bot stopped for safety.", "error");
+      } else {
+        metrics.mode = isRunning ? "NORMAL" : "STOPPED";
+        setMessage(won ? `Trade closed in profit: ${signedMoney(profit)}` : `Trade closed in loss: ${signedMoney(profit)}`, won ? "success" : "warn");
+      }
+
+      tuneOptimiser();
+      saveState();
+      renderHistory();
+      updateUI();
+      drawChart();
+    }
+
+    function handleContractUpdate(contract) {
+      if (!contract) return;
+      if (String(contract.contract_id) !== String(currentContractId)) return;
+
+      if (contract.is_sold) {
+        finalizeTrade(contract);
+      }
+    }
+
+    function runBot() {
+      updateModeState();
+
+      if (!isRunning || !isConnected) return;
+      if (metrics.mode === "STOPPED") return;
+      if (metrics.mode === "COOLDOWN") return;
+      if (isTradeOpen || awaitingProposal) return;
+
+      const now = Date.now();
+      if (now - lastTradeAt < settings.cooldownMs) return;
+
+      if (metrics.sessionLoss >= settings.sessionLossLimit) {
+        metrics.mode = "STOPPED";
+        isRunning = false;
+        setMessage("Session loss limit reached. Bot stopped.", "error");
+        updateUI();
+        return;
+      }
+
+      const signal = evaluateSignal();
+      if (!signal) {
+        setTradeSignalLabel(null);
+        return;
+      }
+
+      metrics.lastConfidence = signal.confidence;
+      setTradeSignalLabel(signal);
+
+      if (settings.confirmTrades) {
+        const ok = confirm(
+          `Place ${signal.direction} trade?\n` +
+          `Stake: ${money(currentStake)}\n` +
+          `Confidence: ${(signal.confidence * 100).toFixed(0)}%\n` +
+          `RSI: ${signal.rsi.toFixed(1)}`
+        );
+        if (!ok) {
+          setMessage("Trade cancelled by user.", "warn");
+          return;
+        }
+      }
+
+      requestProposal(signal);
+      updateUI();
+    }
+
+    function toggleBot() {
+      if (!isConnected) {
+        setMessage("Connect to Deriv first.", "error");
+        return;
+      }
+
+      if (!isRunning) {
+        if (!confirm("Start MarsBot?")) return;
+        if (metrics.mode === "STOPPED" && metrics.sessionLoss >= settings.sessionLossLimit) {
+          setMessage("Reset the session before starting again.", "error");
+          return;
+        }
+        isRunning = true;
+        metrics.mode = "NORMAL";
+        setChip("Running", "success");
+        setMessage("Bot started.", "success");
+      } else {
+        if (!confirm("Stop MarsBot?")) return;
+        isRunning = false;
+        metrics.mode = "STOPPED";
+        setChip("Stopped", "info");
+        setMessage("Bot stopped.", "warn");
+      }
+
+      saveState();
+      updateUI();
+      if (isRunning) runBot();
+    }
+
+    function resetBot() {
+      if (!confirm("Reset all stats, learning memory, and chart history?")) return;
+
+      prices = [];
+      tradeMarkers = [];
+      tradeHistory = [];
+      aiMemory = { patterns: {} };
+      optimiserHistory.length = 0;
+      metrics = {
+        trades: 0,
+        wins: 0,
+        profit: 0,
+        sessionPnL: 0,
+        sessionLoss: 0,
+        lossStreak: 0,
+        martingaleStep: 0,
+        mode: isRunning ? "NORMAL" : "STOPPED",
+        lastConfidence: 0
+      };
+      currentStake = settings.baseStake;
+      currentTrade = null;
+      currentContractId = null;
+      currentProposalId = null;
+      awaitingProposal = false;
+      pendingRequestType = null;
+      lastTradeAt = 0;
+      cooldownUntil = 0;
+      ui.signalLabel.textContent = "Waiting";
+      setMessage("Bot reset complete.", "success");
+      saveState();
+      renderHistory();
+      resizeChart();
+      updateUI();
+    }
+
+    function bindEvents() {
+      [
+        "appId","accountId","baseStake","maxStake","sessionLossLimit","cooldownMs","martingaleToggle",
+        "martingaleMultiplier","martingaleSteps","maxLossStreak","confirmTrades","soundAlerts",
+        "rsiBuy","rsiSell","volMin","confidenceThreshold"
+      ].forEach((id) => {
+        ui[id].addEventListener("change", () => {
+          syncFromInputs();
+          updateUI();
+        });
+      });
+
+      ui.connectBtn.addEventListener("click", connectDeriv);
+      ui.disconnectBtn.addEventListener("click", disconnectDeriv);
+      ui.startBtn.addEventListener("click", toggleBot);
+      ui.resetBtn.addEventListener("click", resetBot);
+      ui.settingsToggle.addEventListener("click", () => {
+        ui.settingsPanel.classList.toggle("hidden");
+      });
+
+      window.addEventListener("resize", resizeChart);
+    }
+
+    function init() {
+      loadState();
+      hydrateInputs();
+      bindEvents();
+      updateOptimiserSummary();
+      setChip("Disconnected", "info");
+      setMessage("Ready.", "info");
+      renderHistory();
+      resizeChart();
+      updateUI();
+    }
+
+    init();
+  </script>
 </body>
 </html>
