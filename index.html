@@ -1,90 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarsBot V5.3 - Advanced Trading System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background-color: #0A0A0A;
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarsBot V8 - AI Optimised</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#0A0A0A; color:white; font-family:sans-serif; }
+canvas { width:100%; }
+</style>
 </head>
+
 <body>
-  <div id="app" class="min-h-screen bg-[#0A0A0A] text-white">
-    <div class="max-w-7xl mx-auto px-4 py-6">
-      <div class="flex items-center justify-between mb-8">
-        <div>
-          <h1 class="text-3xl font-bold mb-1">MarsBot V5.3</h1>
-          <p class="text-[#888888] text-sm">Advanced Trading System</p>
-        </div>
-        <button id="configBtn" class="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] hover:bg-[#252525] rounded-lg transition-colors">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
-          </svg>
-          <span class="text-sm">Configure</span>
-        </button>
-      </div>
-      <div id="statusBanner" class="mb-6 p-4 rounded-lg border bg-[#1A1A1A] border-[#2A2A2A]">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div id="statusDot" class="w-3 h-3 rounded-full bg-[#444444]"></div>
-            <span id="statusText" class="font-medium">Bot Stopped</span>
-            <span id="strategyText" class="text-[#888888] text-sm">Strategy: AI ADAPTIVE</span>
-          </div>
-          <button id="controlBtn" class="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
-            <svg id="controlIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-            <span id="controlText" class="text-sm font-medium">Start</span>
-          </button>
-        </div>
-      </div>
-      <div id="lossWarning" class="mb-6 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 hidden">
-        <div class="flex items-center gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-500">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <div>
-            <p class="font-medium text-yellow-500">Daily Loss Warning</p>
-            <p id="lossWarningText" class="text-sm text-[#CCCCCC]"></p>
-          </div>
-        </div>
-      </div>
-      <div id="configPanel" class="mb-6 bg-[#1A1A1A] p-6 rounded-lg border border-[#2A2A2A] hidden">
-        <h2 class="text-xl font-bold mb-6">Strategy Configuration</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Strategy</label><select id="strategy" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"><option value="ai_adaptive">AI Adaptive</option><option value="rsi">RSI</option><option value="ema">EMA Crossover</option><option value="macd">MACD</option><option value="strength">Strength Score</option></select></div>
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Initial Stake ($)</label><input type="number" id="initialStake" step="0.1" min="0.1" value="1.0" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"></div>
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Max Stake ($)</label><input type="number" id="maxStake" step="1" min="1" value="100.0" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"></div>
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Daily Loss Limit ($)</label><input type="number" id="dailyLossLimit" step="1" min="1" value="50.0" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"></div>
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Martingale Multiplier</label><input type="number" id="martingaleMultiplier" step="0.1" min="1.1" max="3" value="2.0" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"></div>
-          <div><label class="block text-sm text-[#CCCCCC] mb-2">Max Martingale Steps</label><input type="number" id="maxMartingaleSteps" step="1" min="1" max="5" value="3" class="w-full px-4 py-2 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg text-white"></div>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-[#1A1A1A] p-5 rounded-lg border border-[#2A2A2A]"><div class="flex items-center gap-3 mb-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg><span class="text-[#888888] text-sm">Total Trades</span></div><p id="totalTrades" class="text-2xl font-bold">0</p></div>
-        <div class="bg-[#1A1A1A] p-5 rounded-lg border border-[#2A2A2A]"><div class="flex items-center gap-3 mb-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg><span class="text-[#888888] text-sm">Win Rate</span></div><p id="winRate" class="text-2xl font-bold">0.0%</p></div>
-        <div class="bg-[#1A1A1A] p-5 rounded-lg border border-[#2A2A2A]"><div class="flex items-center gap-3 mb-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><span class="text-[#888888] text-sm">Profit/Loss</span></div><p id="profit" class="text-2xl font-bold text-green-400">$0.00</p></div>
-        <div class="bg-[#1A1A1A] p-5 rounded-lg border border-[#2A2A2A]"><div class="flex items-center gap-3 mb-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span class="text-[#888888] text-sm">Daily Loss</span></div><p id="dailyLoss" class="text-2xl font-bold text-red-400">$0.00</p><p id="martingaleInfo" class="text-xs text-[#666666] mt-1">Martingale: Step 0/3</p></div>
-      </div>
-      <div class="bg-[#1A1A1A] p-6 rounded-lg border border-[#2A2A2A] mb-6"><h2 class="text-xl font-bold mb-6">Performance Chart</h2><div id="chart" class="h-64 flex items-end gap-1"></div><div class="mt-4 flex justify-between text-sm text-[#888888]"><span>Last 20 trades</span><span id="chartCurrent">Current: $0.00</span></div></div>
-      <div class="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] overflow-hidden"><div class="p-5 border-b border-[#2A2A2A]"><h2 class="text-xl font-bold">Recent Trades</h2></div><div class="overflow-x-auto"><table class="w-full"><thead class="bg-[#0A0A0A]"><tr><th class="px-5 py-3 text-left text-sm text-[#888888] font-medium">Time</th><th class="px-5 py-3 text-left text-sm text-[#888888] font-medium">Strategy</th><th class="px-5 py-3 text-left text-sm text-[#888888] font-medium">Direction</th><th class="px-5 py-3 text-right text-sm text-[#888888] font-medium">Stake</th><th class="px-5 py-3 text-right text-sm text-[#888888] font-medium">Result</th><th class="px-5 py-3 text-right text-sm text-[#888888] font-medium">P/L</th></tr></thead><tbody id="tradeHistory" class="divide-y divide-[#2A2A2A]"><tr><td colspan="6" class="px-5 py-8 text-center text-[#666666]">No trades yet</td></tr></tbody></table></div></div>
-    </div>
-  </div>
-  <script>let isRunning=false,config={strategy:'ai_adaptive',initialStake:1,maxStake:100,dailyLossLimit:50,martingaleMultiplier:2,maxMartingaleSteps:3},metrics={totalTrades:0,wins:0,winRate:0,profit:0,dailyLoss:0,martingaleStep:0},trades=[],currentStake=1,tradeInterval=null;const configBtn=document.getElementById('configBtn'),configPanel=document.getElementById('configPanel'),controlBtn=document.getElementById('controlBtn'),statusDot=document.getElementById('statusDot'),statusText=document.getElementById('statusText'),strategyText=document.getElementById('strategyText'),lossWarning=document.getElementById('lossWarning');configBtn.addEventListener('click',()=>{configPanel.classList.toggle('hidden')});document.getElementById('strategy').addEventListener('change',e=>{config.strategy=e.target.value;updateStrategyText()});document.getElementById('initialStake').addEventListener('change',e=>{config.initialStake=parseFloat(e.target.value)});document.getElementById('maxStake').addEventListener('change',e=>{config.maxStake=parseFloat(e.target.value)});document.getElementById('dailyLossLimit').addEventListener('change',e=>{config.dailyLossLimit=parseFloat(e.target.value)});document.getElementById('martingaleMultiplier').addEventListener('change',e=>{config.martingaleMultiplier=parseFloat(e.target.value)});document.getElementById('maxMartingaleSteps').addEventListener('change',e=>{config.maxMartingaleSteps=parseInt(e.target.value)});controlBtn.addEventListener('click',()=>{isRunning?stopBot():startBot()});function startBot(){if(config.initialStake<=0||config.initialStake>config.maxStake){alert('Invalid stake: must be > 0 and ≤ max stake');return}if(config.dailyLossLimit<=0){alert('Daily loss limit must be > 0');return}isRunning=true;currentStake=config.initialStake;updateUI();tradeInterval=setInterval(executeTrade,5000);executeTrade()}function stopBot(){isRunning=false;if(tradeInterval){clearInterval(tradeInterval);tradeInterval=null}updateUI()}function executeTrade(){if(!isRunning)return;if(metrics.dailyLoss>=config.dailyLossLimit){alert('Daily loss limit reached!');stopBot();return}const signal=getStrategySignal();if(!signal||signal.direction==='neutral'){console.log('No trade signal');return}const trade={timestamp:new Date().toISOString(),strategy:config.strategy,direction:signal.direction,stake:currentStake,confidence:signal.confidence};const winProbability=0.52+(signal.confidence*0.15);const isWin=Math.random()<winProbability;trade.result=isWin?'win':'loss';trade.profit=isWin?currentStake*0.95:-currentStake;metrics.totalTrades++;if(isWin){metrics.wins++}else{metrics.dailyLoss+=Math.abs(trade.profit)}metrics.profit+=trade.profit;metrics.winRate=(metrics.wins/metrics.totalTrades)*100;if(isWin){currentStake=config.initialStake;metrics.martingaleStep=0}else{if(metrics.martingaleStep<config.maxMartingaleSteps){currentStake=Math.min(currentStake*config.martingaleMultiplier,config.maxStake);metrics.martingaleStep++}else{currentStake=config.initialStake;metrics.martingaleStep=0}}trades.unshift(trade);if(trades.length>100)trades=trades.slice(0,100);updateUI()}function getStrategySignal(){const random=Math.random();if(random<0.3)return{direction:'neutral',confidence:0};const direction=random<0.65?'up':'down';const confidence=0.5+(Math.random()*0.3);return{direction,confidence}}function updateUI(){if(isRunning){statusDot.className='w-3 h-3 rounded-full bg-green-500 pulse';statusText.textContent='Bot Active';controlBtn.className='flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors';controlBtn.querySelector('#controlIcon').innerHTML='<rect x="6" y="6" width="12" height="12"></rect>';controlBtn.querySelector('#controlText').textContent='Stop';document.getElementById('statusBanner').className='mb-6 p-4 rounded-lg border bg-green-500/10 border-green-500/30'}else{statusDot.className='w-3 h-3 rounded-full bg-[#444444]';statusText.textContent='Bot Stopped';controlBtn.className='flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors';controlBtn.querySelector('#controlIcon').innerHTML='<polygon points="5 3 19 12 5 21 5 3"></polygon>';controlBtn.querySelector('#controlText').textContent='Start';document.getElementById('statusBanner').className='mb-6 p-4 rounded-lg border bg-[#1A1A1A] border-[#2A2A2A]'}if(metrics.dailyLoss>=config.dailyLossLimit*0.8){lossWarning.classList.remove('hidden');document.getElementById('lossWarningText').textContent=`$${metrics.dailyLoss.toFixed(2)} / $${config.dailyLossLimit.toFixed(2)} limit reached`}else{lossWarning.classList.add('hidden')}document.getElementById('totalTrades').textContent=metrics.totalTrades;document.getElementById('winRate').textContent=metrics.winRate.toFixed(1)+'%';const profitEl=document.getElementById('profit');profitEl.textContent='$'+metrics.profit.toFixed(2);profitEl.className=metrics.profit>=0?'text-2xl font-bold text-green-400':'text-2xl font-bold text-red-400';document.getElementById('dailyLoss').textContent='$'+metrics.dailyLoss.toFixed(2);document.getElementById('martingaleInfo').textContent=`Martingale: Step ${metrics.martingaleStep}/${config.maxMartingaleSteps}`;updateChart();updateTradeHistory()}function updateStrategyText(){strategyText.textContent='Strategy: '+config.strategy.replace('_',' ').toUpperCase()}function updateChart(){const chartEl=document.getElementById('chart');const chartData=[];let cumulative=0;trades.slice(0,20).reverse().forEach(trade=>{cumulative+=trade.profit;chartData.push(cumulative)});if(chartData.length===0){chartEl.innerHTML='<div class="w-full h-full flex items-center justify-center text-[#666666]">No data to display</div>';document.getElementById('chartCurrent').textContent='Current: $0.00';return}const max=Math.max(...chartData,0);const min=Math.min(...chartData,0);const range=max-min||1;chartEl.innerHTML=chartData.map((value,i)=>{const height=((value-min)/range)*100;const color=value>=0?'bg-green-500/70 hover:bg-green-500':'bg-red-500/70 hover:bg-red-500';return`<div class="flex-1 flex flex-col justify-end group relative"><div class="${color} w-full rounded-t transition-all" style="height: ${Math.max(height,2)}%"></div><div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#0A0A0A] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-[#2A2A2A]">$${value.toFixed(2)}</div></div>`}).join('');document.getElementById('chartCurrent').textContent='Current: $'+chartData[chartData.length-1].toFixed(2)}function updateTradeHistory(){const tbody=document.getElementById('tradeHistory');if(trades.length===0){tbody.innerHTML='<tr><td colspan="6" class="px-5 py-8 text-center text-[#666666]">No trades yet</td></tr>';return}tbody.innerHTML=trades.slice(0,20).map(trade=>{const time=new Date(trade.timestamp).toLocaleTimeString();const strategy=trade.strategy.replace('_',' ').toUpperCase();const directionIcon=trade.direction==='up'?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline></svg>';const resultClass=trade.result==='win'?'bg-green-500/20 text-green-400':'bg-red-500/20 text-red-400';const profitClass=trade.profit>=0?'text-green-400':'text-red-400';const profitSign=trade.profit>=0?'+':'';return`<tr class="hover:bg-[#151515] transition-colors"><td class="px-5 py-4 text-sm text-[#CCCCCC]">${time}</td><td class="px-5 py-4 text-sm text-[#CCCCCC]">${strategy}</td><td class="px-5 py-4"><div class="flex items-center gap-2">${directionIcon}<span class="text-sm font-medium">${trade.direction.toUpperCase()}</span></div></td><td class="px-5 py-4 text-sm text-right text-[#CCCCCC]">$${trade.stake.toFixed(2)}</td><td class="px-5 py-4 text-sm text-right"><span class="px-2 py-1 rounded text-xs font-medium ${resultClass}">${trade.result.toUpperCase()}</span></td><td class="px-5 py-4 text-sm text-right font-medium ${profitClass}">${profitSign}$${trade.profit.toFixed(2)}</td></tr>`}).join('')}updateUI();updateStrategyText()</script>
+<div class="max-w-6xl mx-auto p-4">
+
+<h1 class="text-2xl font-bold mb-4">MarsBot V8 (AI + Optimiser)</h1>
+
+<input id="apiToken" placeholder="Deriv API Token"
+class="w-full p-2 bg-black border mb-3">
+
+<button onclick="connectDeriv()" class="bg-blue-500 px-4 py-2 rounded mb-4">
+Connect
+</button>
+
+<div class="flex gap-2 mb-4">
+<button onclick="toggleBot()" class="bg-green-500 px-4 py-2 rounded">Start</button>
+
+<select id="martingaleToggle" class="bg-black border px-2">
+<option value="on">Martingale ON</option>
+<option value="off">Martingale OFF</option>
+</select>
+</div>
+
+<canvas id="chart" height="120"></canvas>
+
+<div class="grid grid-cols-2 gap-3 mt-4">
+<div>Trades: <span id="totalTrades">0</span></div>
+<div>Win Rate: <span id="winRate">0%</span></div>
+<div>Profit: <span id="profit">$0</span></div>
+<div>Loss: <span id="dailyLoss">$0</span></div>
+<div>Mode: <span id="modeStatus">NORMAL</span></div>
+<div>AI Confidence: <span id="aiConfidence">0</span></div>
+</div>
+
+</div>
+
+<script>
+// ===== STATE =====
+let ws, isRunning=false, isConnected=false, isTradeOpen=false;
+let prices=[], lastTradeTime=0;
+
+// ===== CONFIG =====
+let config={
+  stake:1,
+  maxStake:100,
+  martingale:true,
+  step:0,
+  maxSteps:2,
+  multiplier:1.5,
+  cooldown:5000,
+  lossLimit:30
+};
+
+// ===== AI =====
+let ai={
+  patterns:{},
+  lr:0.1,
+  confidenceThreshold:0
+};
+
+// ===== OPTIMISER =====
+let optimiser={
+  rsiBuy:35,
+  rsiSell:65,
+  volMin:0.2,
+
+  adjust(performance){
+    if(performance<0){
+      this.rsiBuy+=1;
+      this.rsiSell-=1;
+      this.volMin+=0.01;
+      ai.confidenceThreshold+=0.1;
+    } else {
+      this.rsiBuy=Math.max(25,this.rsiBuy-1);
+      this.rsiSell=Math.min(75,this.rsiSell+1);
+      this.volMin=Math.max(0.1,this.volMin-0.01);
+      ai.confidenceThreshold=Math.max(0,ai.confidenceThreshold-0.05);
+    }
+  }
+};
+
+// ===== METRICS =====
+let metrics={
+  trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"
+};
+
+// ===== CONNECT =====
+function connectDeriv(){
+  let token=apiToken.value;
+
+  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+
+  ws.onopen=()=>ws.send(JSON.stringify({authorize:token}));
+
+  ws.onmessage=(msg)=>{
+    let d=JSON.parse(msg.data);
+
+    if(d.authorize){
+      isConnected=true;
+      subscribeTicks();
+    }
+
+    if(d.tick){
+      prices.push(d.tick.quote);
+      if(prices.length>100) prices.shift();
+      drawChart();
+      if(isRunning) runBot();
+    }
+
+    if(d.buy){
+      isTradeOpen=true;
+      subscribeContract(d.buy.contract_id);
+    }
+
+    if(d.proposal_open_contract && d.proposal_open_contract.is_sold){
+      handleResult(d.proposal_open_contract);
+      isTradeOpen=false;
+    }
+  };
+}
+
+function subscribeTicks(){
+  ws.send(JSON.stringify({ticks:"R_50",subscribe:1}));
+}
+
+function subscribeContract(id){
+  ws.send(JSON.stringify({
+    proposal_open_contract:1,
+    contract_id:id,
+    subscribe:1
+  }));
+}
+
+// ===== INDICATORS =====
+function EMA(p,d){
+  let k=2/(p+1), e=d[0];
+  for(let i=1;i<d.length;i++) e=d[i]*k+e*(1-k);
+  return e;
+}
+
+function RSI(d,p=14){
+  let g=0,l=0;
+  for(let i=d.length-p;i<d.length-1;i++){
+    let diff=d[i+1]-d[i];
+    if(diff>0) g+=diff; else l-=diff;
+  }
+  return 100-(100/(1+(g/(l||1))));
+}
+
+// ===== AI PATTERN =====
+function pattern(){
+  return prices.slice(-5).map(p=>Math.round(p)).join("-");
+}
+
+// ===== SIGNAL =====
+function getSignal(){
+  if(prices.length<30) return null;
+
+  let emaF=EMA(9,prices);
+  let emaS=EMA(21,prices);
+  let rsi=RSI(prices);
+  let vol=Math.abs(prices.at(-1)-prices.at(-2));
+
+  if(vol<optimiser.volMin) return null;
+
+  if(rsi<optimiser.rsiBuy && emaF>emaS) return "CALL";
+  if(rsi>optimiser.rsiSell && emaF<emaS) return "PUT";
+
+  return null;
+}
+
+// ===== BOT =====
+function runBot(){
+  if(isTradeOpen) return;
+
+  let now=Date.now();
+  if(now-lastTradeTime<config.cooldown) return;
+
+  if(metrics.loss>=config.lossLimit){
+    metrics.mode="STOPPED";
+    isRunning=false;
+    updateUI();
+    return;
+  }
+
+  let sig=getSignal();
+  if(!sig) return;
+
+  let pat=pattern();
+  let mem=ai.patterns[pat]||{win:0,loss:0};
+  let confidence=mem.win-mem.loss;
+
+  aiConfidence.innerText=confidence.toFixed(2);
+
+  if(confidence < ai.confidenceThreshold) return;
+
+  placeTrade(sig);
+  lastTradeTime=now;
+}
+
+// ===== TRADE =====
+function placeTrade(dir){
+  ws.send(JSON.stringify({
+    buy:1,
+    price:config.stake,
+    parameters:{
+      amount:config.stake,
+      basis:"stake",
+      contract_type:dir,
+      currency:"USD",
+      duration:1,
+      duration_unit:"m",
+      symbol:"R_50"
+    }
+  }));
+}
+
+// ===== RESULT =====
+function handleResult(c){
+  let p=c.profit;
+
+  metrics.trades++;
+  if(p>0) metrics.wins++;
+
+  metrics.profit+=p;
+  metrics.loss=Math.max(0,metrics.loss+p);
+
+  let pat=pattern();
+  if(!ai.patterns[pat]) ai.patterns[pat]={win:0,loss:0};
+
+  if(p>0) ai.patterns[pat].win+=ai.lr;
+  else ai.patterns[pat].loss+=ai.lr;
+
+  optimiser.adjust(p);
+
+  updateUI();
+}
+
+// ===== CHART =====
+function drawChart(){
+  let c=document.getElementById("chart");
+  let ctx=c.getContext("2d");
+
+  ctx.clearRect(0,0,c.width,c.height);
+
+  if(prices.length<2) return;
+
+  let max=Math.max(...prices), min=Math.min(...prices);
+  let range=max-min||1;
+
+  ctx.beginPath();
+  prices.forEach((p,i)=>{
+    let x=(i/prices.length)*c.width;
+    let y=c.height-((p-min)/range)*c.height;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+
+  ctx.stroke();
+}
+
+// ===== UI =====
+function updateUI(){
+  totalTrades.innerText=metrics.trades;
+  winRate.innerText=metrics.trades?((metrics.wins/metrics.trades)*100).toFixed(1)+"%":"0%";
+  profit.innerText="$"+metrics.profit.toFixed(2);
+  dailyLoss.innerText="$"+metrics.loss.toFixed(2);
+  modeStatus.innerText=metrics.mode;
+}
+
+// ===== CONTROL =====
+function toggleBot(){
+  if(metrics.mode!=="STOPPED") isRunning=!isRunning;
+}
+
+martingaleToggle.onchange=e=>{
+  config.martingale=e.target.value==="on";
+};
+</script>
 </body>
 </html>
