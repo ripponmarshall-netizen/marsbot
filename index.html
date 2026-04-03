@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>MarsBot V5.1 — by Marshall</title>
+<title>MarsBot V5 — by Marshall</title>
 
 <!-- React 18 + Babel -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -599,18 +599,16 @@ function calcMACD(arr) {
   const ema26 = calcEMA(arr, 26);
   if (ema12 == null || ema26 == null) return null;
   const macdLine = ema12 - ema26;
-  // Build MACD line history for the last 35 bars (enough for 9-period EMA of MACD)
-  const macdHistory = [];
-  const startIdx = Math.max(26, arr.length - 35);
-  for (let i = startIdx; i <= arr.length; i++) {
-    const slice = arr.slice(0, i);
-    const e12 = calcEMA(slice, 12);
-    const e26 = calcEMA(slice, 26);
-    if (e12 != null && e26 != null) macdHistory.push(e12 - e26);
+  const hist9 = [];
+  const len = arr.length;
+  for (let i = Math.max(0, len - 9); i < len; i++) {
+    const e12 = calcEMA(arr.slice(0, i + 1), 12);
+    const e26 = calcEMA(arr.slice(0, i + 1), 26);
+    if (e12 != null && e26 != null) hist9.push(e12 - e26);
   }
-  const signalLine = macdHistory.length >= 9
-    ? calcEMA(macdHistory, 9)
-    : macdHistory.reduce((a, b) => a + b, 0) / (macdHistory.length || 1);
+  const signalLine = hist9.length >= 9
+    ? calcEMA(hist9, 9)
+    : hist9.reduce((a, b) => a + b, 0) / (hist9.length || 1);
   return { macdLine, signalLine, histogram: macdLine - signalLine };
 }
 
@@ -655,8 +653,8 @@ function evaluateSignal(prices, strategy, minStrength, aiMode) {
   if (macd != null) {
     indicators.macd = macd;
     // MACD gate: blocks signal if direction disagrees
-    if (votes > 0 && macd.histogram < 0) votes = Math.max(0, votes - 1);
-    if (votes < 0 && macd.histogram > 0) votes = Math.min(0, votes + 1);
+    if (votes > 0 && macd.histogram < 0) votes = Math.max(0, votes - 0.5);
+    if (votes < 0 && macd.histogram > 0) votes = Math.min(0, votes + 0.5);
   }
 
   /* ── Strategy override ── */
@@ -832,8 +830,7 @@ function useMarsBot() {
   /* ── Connect ── */
   const connect = useCallback(() => {
     const p = prefsRef.current;
-    const cleanToken = p.token?.replace(/[\s'"`]/g, '') || '';
-    if (!cleanToken) { toast('Enter your Deriv API token first', 'warn'); return; }
+    if (!p.token?.trim()) { toast('Enter your Deriv API token first', 'warn'); return; }
     if (wsRef.current) wsRef.current.close();
     clearTimeout(reconnectTimerRef.current);
 
@@ -843,7 +840,7 @@ function useMarsBot() {
     pushLog('Connecting to Deriv…');
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ authorize: prefsRef.current.token.replace(/[\s'"`]/g, '') }));
+      ws.send(JSON.stringify({ authorize: prefsRef.current.token.trim() }));
     };
 
     ws.onerror = () => {
@@ -963,8 +960,7 @@ function useMarsBot() {
 
             const label = won ? '✓ WIN' : '✗ LOSS';
             const clr = won ? 'success' : 'error';
-            const newDailyPnl = dailyPnlRef.current + profit;
-            pushLog(`${label} ${fmt(profit)} · Session P&L: ${fmt(newDailyPnl)}`, clr);
+            pushLog(`${label} ${fmt(profit)} · Running P&L: ${fmt(dailyPnlRef.current + profit)}`, clr);
             toast(`${label} $${Math.abs(profit).toFixed(2)}`, clr);
           } else {
             setOpenContract(c);
@@ -993,13 +989,6 @@ function useMarsBot() {
     setPrices([]);
     reconnectAttemptsRef.current = 0;
   }, [wsSend]);
-
-  /* ── Stake pref change: sync currentStakeRef when at base step ── */
-  useEffect(() => {
-    if (martingaleStepRef.current === 0) {
-      currentStakeRef.current = parseFloat(prefs.stake) || 1;
-    }
-  }, [prefs.stake]);
 
   /* ── Symbol change: re-subscribe ── */
   useEffect(() => {
@@ -1157,7 +1146,7 @@ function TopBar({ running, setRunning, conn, balance, onConnect, onDisconnect, d
         </svg>
         <div>
           <div style={{ fontWeight:700, fontSize:'var(--text-lg)', lineHeight:1.1 }}>MarsBot</div>
-          <div style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>V5.1 · by Marshall</div>
+          <div style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>V5 · by Marshall</div>
         </div>
       </div>
 
@@ -1567,7 +1556,7 @@ function SettingsPanel({ prefs, updatePref, applyProfile }) {
             <div style={{ fontWeight:700, color:'var(--amber)', marginBottom:2 }}>Balanced</div>
             <div>Conf: 72%</div><div>Stake: $1.00</div>
           </div>
-          <div style={{ background:'var(--surface-3)', padding:'var(--space-2)', borderRadius:'var(--radius-md)', textAlign:'center' }}>
+          <div style={{ background:'var(--surface-3)', padding:'var(--surface-2)', borderRadius:'var(--radius-md)', textAlign:'center' }}>
             <div style={{ fontWeight:700, color:'var(--red)', marginBottom:2 }}>Aggressive</div>
             <div>Conf: 58%</div><div>Stake: $2.00</div>
           </div>
@@ -1798,7 +1787,7 @@ function App() {
         Skip to content
       </a>
 
-      <div>
+      <div id="app">
         <TopBar
           running={bot.running}
           setRunning={bot.setRunning}
@@ -1814,7 +1803,7 @@ function App() {
         {/* Desktop layout */}
         <div className="desktop-layout">
           <Sidebar active={activePanel} onChange={setActivePanel}/>
-          <main id="desktop-main">{renderPanel(activePanel)}</main>
+          <main id="main-content">{renderPanel(activePanel)}</main>
           <aside style={{ display:'flex', flexDirection:'column', gap:'var(--space-4)', position:'sticky', top:'var(--space-4)' }}>
             <TradesPanel trades={bot.trades.slice(0, 20)} onReplay={bot.setSelectedTrade} onClear={bot.clearTrades}/>
             <StatsPanel stats={bot.stats} trades={bot.trades} sessionStart={bot.sessionStart}/>
