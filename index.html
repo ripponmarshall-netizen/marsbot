@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MarsBot V8 - AI Optimised</title>
+<title>MarsBot V9 - Pro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body { background:#0A0A0A; color:white; font-family:sans-serif; }
@@ -14,23 +14,27 @@ canvas { width:100%; }
 <body>
 <div class="max-w-6xl mx-auto p-4">
 
-<h1 class="text-2xl font-bold mb-4">MarsBot V8 (AI + Optimiser)</h1>
+<h1 class="text-2xl font-bold mb-4">MarsBot V9 (Pro)</h1>
 
 <input id="apiToken" placeholder="Deriv API Token"
 class="w-full p-2 bg-black border mb-3">
 
-<button onclick="connectDeriv()" class="bg-blue-500 px-4 py-2 rounded mb-4">
-Connect
-</button>
+<div class="flex gap-2 mb-3">
+<button onclick="connectDeriv()" class="bg-blue-500 px-4 py-2 rounded">Connect</button>
+<button onclick="toggleBot()" class="bg-green-500 px-4 py-2 rounded">Start / Stop</button>
+<button onclick="resetBot()" class="bg-gray-600 px-4 py-2 rounded">Reset</button>
+</div>
 
-<div class="flex gap-2 mb-4">
-<button onclick="toggleBot()" class="bg-green-500 px-4 py-2 rounded">Start</button>
-
+<div class="flex gap-3 mb-4 text-sm">
+<label><input type="checkbox" id="confirmTrades"> Confirm Trades</label>
 <select id="martingaleToggle" class="bg-black border px-2">
 <option value="on">Martingale ON</option>
 <option value="off">Martingale OFF</option>
 </select>
 </div>
+
+<p id="statusMessage" class="text-yellow-400 mb-2"></p>
+<p id="lastTrade" class="text-gray-400 mb-4"></p>
 
 <canvas id="chart" height="120"></canvas>
 
@@ -43,61 +47,56 @@ Connect
 <div>AI Confidence: <span id="aiConfidence">0</span></div>
 </div>
 
+<!-- Trade History -->
+<div class="mt-6">
+<h2 class="font-bold mb-2">Trade History</h2>
+<table class="w-full text-sm">
+<thead>
+<tr class="text-gray-400">
+<th>Time</th><th>Type</th><th>Result</th><th>P/L</th>
+</tr>
+</thead>
+<tbody id="history"></tbody>
+</table>
+</div>
+
 </div>
 
 <script>
+// ===== AUDIO =====
+const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const lossSound = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+
 // ===== STATE =====
 let ws, isRunning=false, isConnected=false, isTradeOpen=false;
 let prices=[], lastTradeTime=0;
+let trades=[];
 
 // ===== CONFIG =====
 let config={
   stake:1,
-  maxStake:100,
   martingale:true,
-  step:0,
-  maxSteps:2,
-  multiplier:1.5,
   cooldown:5000,
   lossLimit:30
 };
 
 // ===== AI =====
-let ai={
-  patterns:{},
-  lr:0.1,
-  confidenceThreshold:0
-};
-
-// ===== OPTIMISER =====
-let optimiser={
-  rsiBuy:35,
-  rsiSell:65,
-  volMin:0.2,
-
-  adjust(performance){
-    if(performance<0){
-      this.rsiBuy+=1;
-      this.rsiSell-=1;
-      this.volMin+=0.01;
-      ai.confidenceThreshold+=0.1;
-    } else {
-      this.rsiBuy=Math.max(25,this.rsiBuy-1);
-      this.rsiSell=Math.min(75,this.rsiSell+1);
-      this.volMin=Math.max(0.1,this.volMin-0.01);
-      ai.confidenceThreshold=Math.max(0,ai.confidenceThreshold-0.05);
-    }
-  }
-};
+let ai={patterns:{}, lr:0.1, threshold:0};
 
 // ===== METRICS =====
-let metrics={
-  trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"
-};
+let metrics={trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"};
+
+// ===== STATUS =====
+function setStatus(msg,color="yellow"){
+  statusMessage.innerText=msg;
+  statusMessage.className=`text-${color}-400 mb-2`;
+}
 
 // ===== CONNECT =====
 function connectDeriv(){
-  let token=apiToken.value;
+  let token=apiToken.value.trim();
+  if(!token) return setStatus("Enter API token","red");
+  if(!confirm("Connect to Deriv?")) return;
 
   ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
 
@@ -106,8 +105,11 @@ function connectDeriv(){
   ws.onmessage=(msg)=>{
     let d=JSON.parse(msg.data);
 
+    if(d.error) return setStatus(d.error.message,"red");
+
     if(d.authorize){
       isConnected=true;
+      setStatus("Connected","green");
       subscribeTicks();
     }
 
@@ -130,6 +132,7 @@ function connectDeriv(){
   };
 }
 
+// ===== SUBSCRIBE =====
 function subscribeTicks(){
   ws.send(JSON.stringify({ticks:"R_50",subscribe:1}));
 }
@@ -144,23 +147,20 @@ function subscribeContract(id){
 
 // ===== INDICATORS =====
 function EMA(p,d){
+  if(d.length===0) return 0;
   let k=2/(p+1), e=d[0];
   for(let i=1;i<d.length;i++) e=d[i]*k+e*(1-k);
   return e;
 }
 
 function RSI(d,p=14){
+  if(d.length<p) return 50;
   let g=0,l=0;
   for(let i=d.length-p;i<d.length-1;i++){
     let diff=d[i+1]-d[i];
     if(diff>0) g+=diff; else l-=diff;
   }
   return 100-(100/(1+(g/(l||1))));
-}
-
-// ===== AI PATTERN =====
-function pattern(){
-  return prices.slice(-5).map(p=>Math.round(p)).join("-");
 }
 
 // ===== SIGNAL =====
@@ -172,10 +172,10 @@ function getSignal(){
   let rsi=RSI(prices);
   let vol=Math.abs(prices.at(-1)-prices.at(-2));
 
-  if(vol<optimiser.volMin) return null;
+  if(vol<0.2) return null;
 
-  if(rsi<optimiser.rsiBuy && emaF>emaS) return "CALL";
-  if(rsi>optimiser.rsiSell && emaF<emaS) return "PUT";
+  if(rsi<35 && emaF>emaS) return "CALL";
+  if(rsi>65 && emaF<emaS) return "PUT";
 
   return null;
 }
@@ -184,12 +184,18 @@ function getSignal(){
 function runBot(){
   if(isTradeOpen) return;
 
+  if(!isConnected){
+    setStatus("Not connected","red");
+    return;
+  }
+
   let now=Date.now();
   if(now-lastTradeTime<config.cooldown) return;
 
   if(metrics.loss>=config.lossLimit){
     metrics.mode="STOPPED";
     isRunning=false;
+    setStatus("Session stopped","red");
     updateUI();
     return;
   }
@@ -197,13 +203,7 @@ function runBot(){
   let sig=getSignal();
   if(!sig) return;
 
-  let pat=pattern();
-  let mem=ai.patterns[pat]||{win:0,loss:0};
-  let confidence=mem.win-mem.loss;
-
-  aiConfidence.innerText=confidence.toFixed(2);
-
-  if(confidence < ai.confidenceThreshold) return;
+  if(confirmTrades.checked && !confirm(`Execute ${sig}?`)) return;
 
   placeTrade(sig);
   lastTradeTime=now;
@@ -228,30 +228,55 @@ function placeTrade(dir){
 
 // ===== RESULT =====
 function handleResult(c){
-  let p=c.profit;
+  let p = Number(c.profit) || 0;
 
   metrics.trades++;
-  if(p>0) metrics.wins++;
+  if(p>0){ metrics.wins++; winSound.play(); }
+  else lossSound.play();
 
   metrics.profit+=p;
   metrics.loss=Math.max(0,metrics.loss+p);
 
-  let pat=pattern();
-  if(!ai.patterns[pat]) ai.patterns[pat]={win:0,loss:0};
+  lastTrade.innerText=`Last Trade: ${p>0?"WIN":"LOSS"} (${p.toFixed(2)})`;
 
-  if(p>0) ai.patterns[pat].win+=ai.lr;
-  else ai.patterns[pat].loss+=ai.lr;
+  trades.unshift({
+    time:new Date().toLocaleTimeString(),
+    type:c.contract_type,
+    result:p>0?"WIN":"LOSS",
+    profit:p.toFixed(2)
+  });
 
-  optimiser.adjust(p);
+  if(trades.length>20) trades.pop();
 
+  updateHistory();
   updateUI();
+}
+
+// ===== HISTORY =====
+function updateHistory(){
+  history.innerHTML=trades.map(t=>`
+    <tr>
+      <td>${t.time}</td>
+      <td>${t.type}</td>
+      <td>${t.result}</td>
+      <td>${t.profit}</td>
+    </tr>
+  `).join("");
+}
+
+// ===== RESET =====
+function resetBot(){
+  if(!confirm("Reset bot?")) return;
+  metrics={trades:0,wins:0,profit:0,loss:0,mode:"NORMAL"};
+  trades=[];
+  updateUI();
+  updateHistory();
+  setStatus("Reset complete","green");
 }
 
 // ===== CHART =====
 function drawChart(){
-  let c=document.getElementById("chart");
-  let ctx=c.getContext("2d");
-
+  let c=chart, ctx=c.getContext("2d");
   ctx.clearRect(0,0,c.width,c.height);
 
   if(prices.length<2) return;
@@ -263,10 +288,8 @@ function drawChart(){
   prices.forEach((p,i)=>{
     let x=(i/prices.length)*c.width;
     let y=c.height-((p-min)/range)*c.height;
-    if(i===0) ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });
-
   ctx.stroke();
 }
 
@@ -281,7 +304,11 @@ function updateUI(){
 
 // ===== CONTROL =====
 function toggleBot(){
-  if(metrics.mode!=="STOPPED") isRunning=!isRunning;
+  if(!isConnected) return setStatus("Connect first","red");
+  if(!confirm(isRunning?"Stop bot?":"Start bot?")) return;
+
+  isRunning=!isRunning;
+  setStatus(isRunning?"Bot running":"Bot stopped","green");
 }
 
 martingaleToggle.onchange=e=>{
