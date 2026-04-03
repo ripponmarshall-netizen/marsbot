@@ -2,1323 +2,2821 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MarsBot V13 - Regular API</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Deriv R_50 Trading Bot</title>
   <style>
-    :root { color-scheme: dark; }
-    body { background:#0a0a0a; color:#fff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .card { background:#151515; border:1px solid #2a2a2a; }
-    .field { width:100%; background:#0a0a0a; border:1px solid #2a2a2a; border-radius:.5rem; padding:.72rem .85rem; color:#fff; outline:none; }
-    .field:focus { border-color:#4b5563; }
-    .pill { display:inline-flex; align-items:center; gap:.55rem; padding:.45rem .75rem; border-radius:9999px; border:1px solid #2a2a2a; background:#151515; font-size:.875rem; }
-    .dot { width:.7rem; height:.7rem; border-radius:9999px; background:#6b7280; flex:0 0 auto; }
-    canvas { display:block; width:100%; height:220px; }
-    th, td { border-bottom:1px solid #2a2a2a; }
-    .muted { color:#9ca3af; }
+    :root{
+      --bg:#0b1020;
+      --panel:#121a2d;
+      --panel2:#0f1627;
+      --card:#151f35;
+      --text:#e7edf7;
+      --muted:#8fa3c6;
+      --line:#23314f;
+      --accent:#6ea8ff;
+      --good:#2fd081;
+      --warn:#f5b84b;
+      --bad:#ff6b6b;
+      --info:#6dc5ff;
+      --shadow: 0 14px 40px rgba(0,0,0,.32);
+      --radius:16px;
+      --radius2:12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    body.light{
+      --bg:#f5f8fd;
+      --panel:#ffffff;
+      --panel2:#f8fbff;
+      --card:#ffffff;
+      --text:#162033;
+      --muted:#5c6c85;
+      --line:#dbe4f0;
+      --accent:#245bff;
+      --shadow: 0 14px 40px rgba(21,34,59,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),var(--bg));
+      color:var(--text);
+      font-family:var(--sans);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+    .app{max-width:1700px;margin:0 auto;padding:14px}
+    .topbar,.toolbar,.tabs,.grid,.grid-2,.grid-3{display:grid;gap:12px}
+    .header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;
+    }
+    .brand{display:flex;flex-direction:column;gap:3px}
+    .brand h1{margin:0;font-size:20px;line-height:1.15}
+    .brand .sub{color:var(--muted);font-size:12px}
+    .chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+    .chip{
+      padding:8px 11px;border-radius:999px;border:1px solid var(--line);
+      background:var(--panel2);font-size:12px;color:var(--muted);
+      display:inline-flex;align-items:center;gap:8px;user-select:none;
+    }
+    .chip strong{color:var(--text);font-weight:700}
+    .chip.active{color:var(--text)}
+    .chip.active[data-tone="good"]{border-color:rgba(47,208,129,.35);background:rgba(47,208,129,.12)}
+    .chip.active[data-tone="warn"]{border-color:rgba(245,184,75,.35);background:rgba(245,184,75,.12)}
+    .chip.active[data-tone="bad"]{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.12)}
+    .chip.active[data-tone="info"]{border-color:rgba(109,197,255,.35);background:rgba(109,197,255,.12)}
+    .toolbar{
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      padding:12px;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;
+    }
+    .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    input,select,button,textarea{
+      font:inherit;
+    }
+    input[type="text"],input[type="password"],input[type="number"],input[type="time"],select,textarea{
+      width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);
+      border-radius:12px;padding:11px 12px;outline:none;
+    }
+    input[type="number"]{font-variant-numeric:tabular-nums}
+    textarea{min-height:86px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(36,91,255,.12)}
+    button{
+      border:1px solid var(--line);background:var(--panel2);color:var(--text);
+      border-radius:12px;padding:11px 12px;cursor:pointer;min-height:44px;
+      transition:transform .06s ease, background .2s ease, border-color .2s ease;
+    }
+    button:hover{border-color:rgba(110,168,255,.45)}
+    button:active{transform:translateY(1px)}
+    button.primary{background:linear-gradient(180deg,rgba(110,168,255,.26),rgba(110,168,255,.14));border-color:rgba(110,168,255,.42)}
+    button.good{background:linear-gradient(180deg,rgba(47,208,129,.22),rgba(47,208,129,.1));border-color:rgba(47,208,129,.35)}
+    button.warn{background:linear-gradient(180deg,rgba(245,184,75,.22),rgba(245,184,75,.1));border-color:rgba(245,184,75,.35)}
+    button.bad{background:linear-gradient(180deg,rgba(255,107,107,.22),rgba(255,107,107,.1));border-color:rgba(255,107,107,.35)}
+    button.ghost{background:transparent}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .toolbar .span-2{grid-column:span 2}
+    .toolbar .span-3{grid-column:span 3}
+    .toolbar .span-4{grid-column:span 4}
+    .toolbar .span-6{grid-column:span 6}
+    .toolbar .span-12{grid-column:span 12}
+
+    .secondarybar{
+      display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;
+      padding:12px;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;
+    }
+    .tabs{
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      margin-bottom:12px;
+    }
+    .tabbtn{
+      min-height:46px;border-radius:14px;font-weight:700;background:var(--panel);
+      border:1px solid var(--line);color:var(--muted);
+    }
+    .tabbtn.active{background:linear-gradient(180deg,rgba(110,168,255,.2),rgba(110,168,255,.08));color:var(--text);border-color:rgba(110,168,255,.4)}
+    .tabpanel{
+      display:none;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;min-height:500px;
+    }
+    .tabpanel.active{display:block}
+    .grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .card{
+      background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:14px;min-width:0;
+    }
+    .card h3,.card h4{margin:0 0 10px}
+    .card h3{font-size:15px}
+    .card h4{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .metric{
+      display:flex;flex-direction:column;gap:6px;min-height:96px;
+    }
+    .metric .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+    .metric .v{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+    .metric .s{color:var(--muted);font-size:12px}
+    .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+    .section-title{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;
+    }
+    .section-title .hint{color:var(--muted);font-size:12px}
+    .split{
+      display:grid;grid-template-columns:1.15fr .85fr;gap:12px;
+    }
+    .stack{display:flex;flex-direction:column;gap:12px}
+    .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+    table{width:100%;border-collapse:collapse;min-width:780px}
+    th,td{
+      padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;
+      vertical-align:top;font-size:13px;
+    }
+    th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.02)}
+    tr:last-child td{border-bottom:none}
+    .small{font-size:12px;color:var(--muted)}
+    .status{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);font-size:12px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+    .ok .dot{background:var(--good)}
+    .warn .dot{background:var(--warn)}
+    .bad .dot{background:var(--bad)}
+    .info .dot{background:var(--info)}
+    .muted{color:var(--muted)}
+    .pill{
+      display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;border:1px solid var(--line);
+      background:var(--panel2);font-size:12px;margin-right:6px;margin-bottom:6px;
+    }
+    .pill.good{border-color:rgba(47,208,129,.35);background:rgba(47,208,129,.08)}
+    .pill.warn{border-color:rgba(245,184,75,.35);background:rgba(245,184,75,.08)}
+    .pill.bad{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
+    .pill.info{border-color:rgba(109,197,255,.35);background:rgba(109,197,255,.08)}
+    .logbox{
+      height:380px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel2);padding:10px;
+      font-family:var(--mono);font-size:12px;line-height:1.45;
+    }
+    .logline{padding:8px 10px;border-bottom:1px dashed rgba(255,255,255,.06)}
+    .logline:last-child{border-bottom:none}
+    .logline .ts{color:var(--muted);margin-right:8px}
+    .logline .lv{font-weight:800;margin-right:8px}
+    .lv.ok{color:var(--good)}
+    .lv.warn{color:var(--warn)}
+    .lv.err{color:var(--bad)}
+    .lv.inf{color:var(--info)}
+    .chart{
+      width:100%;height:210px;background:var(--panel2);border:1px solid var(--line);
+      border-radius:14px;display:block;
+    }
+    .help-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;
+      z-index:50;padding:16px;
+    }
+    .help-overlay.open{display:flex}
+    .help{
+      width:min(980px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);
+      border-radius:20px;box-shadow:var(--shadow);padding:18px;
+    }
+    .help h2{margin:0 0 10px}
+    .help details{
+      background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0
+    }
+    .help summary{cursor:pointer;font-weight:700}
+    .help p{color:var(--muted);line-height:1.55}
+    .right{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+    .tight{gap:8px}
+    .checklist{display:flex;flex-direction:column;gap:8px}
+    .check-item{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);
+      border-radius:12px;background:var(--panel2)
+    }
+    .check-item .l{display:flex;flex-direction:column;gap:4px}
+    .check-item .l .t{font-weight:700}
+    .check-item .r{font-size:12px;color:var(--muted);text-align:right;max-width:45%}
+    .check-item.pass{border-color:rgba(47,208,129,.25)}
+    .check-item.fail{border-color:rgba(255,107,107,.25)}
+    .check-item.pass .t::before{content:"✓ ";color:var(--good)}
+    .check-item.fail .t::before{content:"✕ ";color:var(--bad)}
+    .kvs{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+    }
+    .kv{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+    .kv .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .kv .v{margin-top:4px;font-weight:800;font-variant-numeric:tabular-nums}
+    .subtle{color:var(--muted);font-size:12px}
+    .footer-note{
+      margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5
+    }
+    .nowrap{white-space:nowrap}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .spaced{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .hide{display:none!important}
+    .danger-note{
+      padding:12px 14px;border:1px solid rgba(255,107,107,.25);background:rgba(255,107,107,.08);border-radius:14px;color:var(--text)
+    }
+    .note{
+      padding:12px 14px;border:1px solid rgba(109,197,255,.25);background:rgba(109,197,255,.08);border-radius:14px;color:var(--text)
+    }
+    .weights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .weight-box{border:1px solid var(--line);border-radius:14px;background:var(--panel2);padding:12px}
+    .weight-box h4{margin:0 0 8px}
+    .weight-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.06)}
+    .weight-row:last-child{border-bottom:none}
+    .weight-row .n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+    .form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .form-grid .field{min-width:0}
+    .form-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .form-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    @media (max-width: 1200px){
+      .toolbar,.secondarybar,.grid,.grid-2,.grid-3,.grid-4,.split,.weights-grid,.form-grid,.form-grid-2,.form-grid-3,.tabs{grid-template-columns:1fr 1fr}
+      .toolbar .span-2,.toolbar .span-3,.toolbar .span-4,.toolbar .span-6,.toolbar .span-12{grid-column:span 1}
+      .split{grid-template-columns:1fr}
+    }
+    @media (max-width: 760px){
+      .header{flex-direction:column;align-items:flex-start}
+      .chip-row{justify-content:flex-start}
+      .toolbar,.secondarybar,.grid,.grid-2,.grid-3,.grid-4,.split,.weights-grid,.form-grid,.form-grid-2,.form-grid-3,.tabs{grid-template-columns:1fr}
+      .check-item{flex-direction:column}
+      .check-item .r{max-width:100%;text-align:left}
+      .tabpanel{padding:12px}
+    }
   </style>
 </head>
 <body>
-  <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">MarsBot V13</h1>
-        <p class="text-sm text-gray-400">Volatility 50 • Regular API • Survival AI</p>
-      </div>
-      <div id="connectionChip" class="pill">
-        <span id="statusDot" class="dot"></span>
-        <span id="statusText">Disconnected</span>
-      </div>
+<div class="app">
+  <header class="header">
+    <div class="brand">
+      <h1>Deriv R_50 Bot</h1>
+      <div class="sub">Single-file browser trading dashboard for R_50 with transparent risk gates, adaptive weights, and conditional early close support.</div>
     </div>
-
-    <div class="card rounded-xl p-4 space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Deriv App ID</label>
-          <input id="appId" class="field" placeholder="Your Deriv App ID" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Access Token / PAT</label>
-          <input id="accessToken" class="field" type="password" placeholder="Bearer token" />
-        </div>
-      </div>
-
-      <div class="flex flex-wrap gap-2">
-        <button id="connectBtn" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors">Connect</button>
-        <button id="disconnectBtn" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 transition-colors">Disconnect</button>
-        <button id="startBtn" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition-colors">Start Bot</button>
-        <button id="tradeNowBtn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">Trade Now</button>
-        <button id="resetBtn" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 transition-colors">Reset</button>
-        <button id="settingsToggle" class="px-4 py-2 rounded-lg bg-[#1f1f1f] hover:bg-[#262626] transition-colors">Settings</button>
-
-        <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
-          <input id="confirmTrades" type="checkbox" class="accent-blue-500" />
-          <span class="text-sm">Confirm trades</span>
-        </label>
-
-        <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
-          <input id="soundAlerts" type="checkbox" class="accent-blue-500" checked />
-          <span class="text-sm">Sound alerts</span>
-        </label>
-      </div>
-
-      <p id="statusMessage" class="rounded-lg border border-[#2a2a2a] px-4 py-3 text-sm text-gray-300 bg-[#101010]">Ready.</p>
-      <p id="lastTrade" class="text-sm text-gray-400">Last trade: none</p>
-      <p id="connectionInfo" class="text-xs text-gray-500">Market: R_50</p>
+    <div class="chip-row" id="stateChips">
+      <span class="chip" id="chipConn" data-tone="info"><strong>Disconnected</strong></span>
+      <span class="chip" id="chipAuth" data-tone="good"><strong>Unauthorized</strong></span>
+      <span class="chip" id="chipMode" data-tone="info"><strong>Demo</strong></span>
+      <span class="chip" id="chipRun" data-tone="warn"><strong>Idle</strong></span>
+      <span class="chip" id="chipArmed" data-tone="warn"><strong>Unarmed</strong></span>
+      <span class="chip" id="chipPause" data-tone="warn"><strong>Paused</strong></span>
+      <span class="chip" id="chipCooldown" data-tone="warn"><strong>Cooldown</strong></span>
+      <span class="chip" id="chipLock" data-tone="bad"><strong>Unlocked</strong></span>
     </div>
+  </header>
 
-    <div id="settingsPanel" class="card rounded-xl p-4 hidden space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-semibold">Trading Controls</h2>
-        <p id="optimiserSummary" class="text-xs text-gray-400"></p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Symbol</label>
-          <input id="symbol" class="field" value="R_50" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Stake</label>
-          <input id="stake" type="number" min="0.1" step="0.1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Max Stake</label>
-          <input id="maxStake" type="number" min="0.1" step="0.1" class="field" />
-        </div>
-
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Duration</label>
-          <input id="duration" type="number" min="1" step="1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Duration Unit</label>
-          <select id="durationUnit" class="field">
-            <option value="m">Minutes</option>
-            <option value="t">Ticks</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Max Exposure % of Balance</label>
-          <input id="maxExposurePct" type="number" min="0.1" max="10" step="0.1" class="field" />
-        </div>
-
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Session Loss Limit</label>
-          <input id="sessionLossLimit" type="number" min="1" step="1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Cooldown (ms)</label>
-          <input id="cooldownMs" type="number" min="1000" step="500" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Max Loss Streak</label>
-          <input id="maxLossStreak" type="number" min="1" max="20" step="1" class="field" />
-        </div>
-
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Martingale</label>
-          <select id="martingaleToggle" class="field">
-            <option value="off">OFF</option>
-            <option value="on">ON</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Martingale Multiplier</label>
-          <input id="martingaleMultiplier" type="number" min="1.1" max="5" step="0.1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Martingale Steps</label>
-          <input id="martingaleSteps" type="number" min="0" max="10" step="1" class="field" />
-        </div>
-
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">RSI Buy Threshold</label>
-          <input id="rsiBuy" type="number" min="5" max="49" step="1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">RSI Sell Threshold</label>
-          <input id="rsiSell" type="number" min="51" max="95" step="1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Volatility Minimum</label>
-          <input id="volMin" type="number" min="0.01" max="10" step="0.01" class="field" />
-        </div>
-
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Confidence Threshold</label>
-          <input id="confidenceThreshold" type="number" min="0" max="1" step="0.01" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Profit Close Target</label>
-          <input id="closeProfitTarget" type="number" min="0.01" step="0.01" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Open Trade Stop Loss</label>
-          <input id="closeLossTarget" type="number" min="0.01" step="0.01" class="field" />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-[#2a2a2a]">
-        <label class="inline-flex items-center gap-2">
-          <input id="closeOnProfit" type="checkbox" class="accent-blue-500" />
-          <span class="text-sm">Close trades in profit</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input id="closeOnLoss" type="checkbox" class="accent-blue-500" />
-          <span class="text-sm">Close trades on open loss guard</span>
-        </label>
-        <label class="inline-flex items-center gap-2">
-          <input id="useContractUpdate" type="checkbox" class="accent-blue-500" />
-          <span class="text-sm">Use server-side take profit/stop loss</span>
-        </label>
-      </div>
-
-      <div class="text-xs text-gray-500">Regular WebSocket login uses your App ID and Access Token only.</div>
-
-      <div>
-        <label class="block text-sm text-gray-400 mb-2">API Output</label>
-        <pre id="apiOutput" class="whitespace-pre-wrap text-xs text-gray-300 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg p-3 min-h-24 overflow-auto">No response yet.</pre>
-      </div>
+  <div class="toolbar">
+    <div class="field span-4">
+      <label>Deriv WebSocket endpoint</label>
+      <input id="wsEndpoint" type="text" value="wss://ws.derivws.com/websockets/v3" />
     </div>
-
-    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-4">
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Balance</div>
-        <div id="balance" class="text-2xl font-bold">—</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Total Trades</div>
-        <div id="totalTrades" class="text-2xl font-bold">0</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Win Rate</div>
-        <div id="winRate" class="text-2xl font-bold">0.0%</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Profit</div>
-        <div id="profit" class="text-2xl font-bold">$0.00</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Session Loss</div>
-        <div id="sessionLoss" class="text-2xl font-bold">$0.00</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Current Stake</div>
-        <div id="currentStake" class="text-2xl font-bold">$0.00</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-sm text-gray-400 mb-2">Open P/L</div>
-        <div id="openProfit" class="text-2xl font-bold">$0.00</div>
-      </div>
+    <div class="field span-2">
+      <label>App ID</label>
+      <input id="appId" type="number" min="1" value="1089" />
     </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-      <div class="card rounded-xl p-4">
-        <div class="text-gray-400 mb-1">Mode</div>
-        <div id="modeStatus" class="font-semibold">STOPPED</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-gray-400 mb-1">Loss Streak</div>
-        <div id="lossStreak" class="font-semibold">0</div>
-      </div>
-      <div class="card rounded-xl p-4">
-        <div class="text-gray-400 mb-1">AI Confidence</div>
-        <div id="aiConfidence" class="font-semibold">0%</div>
-      </div>
+    <div class="field span-2">
+      <label>API token</label>
+      <input id="apiToken" type="password" placeholder="Enter your Deriv token" />
     </div>
-
-    <div class="card rounded-xl p-4 space-y-3">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <h2 class="text-lg font-semibold">Live Chart</h2>
-        <div class="text-xs text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
-          <span>Signal: <strong id="signalLabel">Waiting</strong></span>
-          <span>Target: <strong id="profitTargetLabel">$0.00</strong></span>
-          <span>Lock: <strong id="riskLockLabel">Normal</strong></span>
-        </div>
-      </div>
-      <canvas id="chart"></canvas>
+    <div class="field span-1">
+      <label>Mode</label>
+      <select id="accountMode">
+        <option value="demo">Demo</option>
+        <option value="live">Live</option>
+      </select>
     </div>
+    <div class="field span-1">
+      <label>Currency</label>
+      <input id="currency" type="text" value="USD" />
+    </div>
+    <div class="field span-2">
+      <label>Symbol</label>
+      <input id="symbol" type="text" value="R_50" />
+    </div>
+    <div class="field span-12 right">
+      <button class="primary" id="btnConnect">Connect</button>
+      <button class="good" id="btnAuthorize">Authorize</button>
+      <button class="ghost" id="btnTheme">Toggle theme</button>
+      <button class="ghost" id="btnHelp">Help</button>
+    </div>
+  </div>
 
-    <div class="card rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
-        <h2 class="text-lg font-semibold">Trade History</h2>
-        <p class="text-xs text-gray-500">Last 20 trades</p>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[1100px]">
-          <thead class="bg-[#0f0f0f]">
-            <tr>
-              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Time</th>
-              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Direction</th>
-              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Stake</th>
-              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Confidence</th>
-              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Open P/L</th>
-              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Pattern</th>
-              <th class="px-4 py-3 text-left text-sm text-gray-400 font-medium">Exit</th>
-              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">Result</th>
-              <th class="px-4 py-3 text-right text-sm text-gray-400 font-medium">P/L</th>
-            </tr>
-          </thead>
-          <tbody id="tradeHistory" class="divide-y divide-[#2a2a2a]">
-            <tr>
-              <td colspan="9" class="px-4 py-8 text-center text-gray-500">No trades yet</td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="secondarybar">
+    <div class="field span-2">
+      <label>Live armed</label>
+      <button id="btnArm" class="warn">Arm Live</button>
+    </div>
+    <div class="field span-2">
+      <label>Auto mode</label>
+      <button id="btnAuto" class="primary">Auto: Off</button>
+    </div>
+    <div class="field span-2">
+      <label>Pause / resume</label>
+      <button id="btnPause" class="warn">Pause</button>
+    </div>
+    <div class="field span-2">
+      <label>Stop new trades</label>
+      <button id="btnStopNew" class="warn">Stop New</button>
+    </div>
+    <div class="field span-2">
+      <label>Panic stop</label>
+      <button id="btnPanic" class="bad">Panic</button>
+    </div>
+    <div class="field span-2">
+      <label>Session reset</label>
+      <button id="btnReset" class="ghost">Reset Session</button>
+    </div>
+    <div class="field span-3">
+      <label>Shadow mode</label>
+      <select id="shadowMode">
+        <option value="off">Off</option>
+        <option value="on">On (paper trade signals)</option>
+      </select>
+    </div>
+    <div class="field span-3">
+      <label>Auto reconnect</label>
+      <select id="autoReconnect">
+        <option value="on">On</option>
+        <option value="off">Off</option>
+      </select>
+    </div>
+    <div class="field span-6">
+      <label>Trade actions</label>
+      <div class="right">
+        <button id="btnCall" class="good">Manual CALL</button>
+        <button id="btnPut" class="bad">Manual PUT</button>
+        <button id="btnClose" class="warn">Manual Close</button>
       </div>
     </div>
   </div>
 
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="dashboard">Dashboard</button>
+    <button class="tabbtn" data-tab="strategy">Strategy Lab</button>
+    <button class="tabbtn" data-tab="risk">Risk Panel</button>
+    <button class="tabbtn" data-tab="blotter">Trade Blotter</button>
+    <button class="tabbtn" data-tab="logs">Logs / Diagnostics</button>
+    <button class="tabbtn" data-tab="sim">Backtest / Replay / Simulation</button>
+  </div>
+
+  <section class="tabpanel active" id="tab-dashboard">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Live market view</h3>
+          <div class="hint">Recent buffered prices and candle-derived signals</div>
+        </div>
+        <canvas id="priceChart" class="chart" width="1400" height="260"></canvas>
+      </div>
+
+      <div class="card" style="grid-column:span 4">
+        <div class="section-title">
+          <h3>Session metrics</h3>
+          <div class="hint" id="sessionHint">Waiting for data</div>
+        </div>
+        <div class="grid-2">
+          <div class="metric"><div class="k">Balance / equity</div><div class="v" id="metricEquity">—</div><div class="s" id="metricBalance">—</div></div>
+          <div class="metric"><div class="k">Daily P&amp;L</div><div class="v" id="metricPnL">—</div><div class="s" id="metricPnlSub">—</div></div>
+          <div class="metric"><div class="k">Win rate</div><div class="v" id="metricWinRate">—</div><div class="s">Closed trades only</div></div>
+          <div class="metric"><div class="k">Trades today</div><div class="v" id="metricTrades">—</div><div class="s" id="metricCap">—</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 4">
+        <div class="section-title">
+          <h3>Readiness checklist</h3>
+          <div class="hint">Entry gates with reasons</div>
+        </div>
+        <div id="gateList" class="checklist"></div>
+      </div>
+
+      <div class="card" style="grid-column:span 4">
+        <div class="section-title">
+          <h3>Signal summary</h3>
+          <div class="hint" id="signalHeader">No signal yet</div>
+        </div>
+        <div class="kvs">
+          <div class="kv"><div class="k">Regime</div><div class="v" id="sigRegime">—</div></div>
+          <div class="kv"><div class="k">Bias / confidence</div><div class="v" id="sigBias">—</div></div>
+          <div class="kv"><div class="k">Symbol health</div><div class="v" id="sigHealth">—</div></div>
+          <div class="kv"><div class="k">Warmup</div><div class="v" id="sigWarmup">—</div></div>
+        </div>
+        <div style="margin-top:10px" id="signalExplain"></div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <div class="section-title">
+          <h3>Open contract</h3>
+          <div class="hint" id="openContractHint">No active contract</div>
+        </div>
+        <div id="openContractBox" class="note">No active live or shadow contract.</div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <div class="section-title">
+          <h3>Risk summary</h3>
+          <div class="hint">Hard stops and controls</div>
+        </div>
+        <div id="riskSummaryBox" class="danger-note">Risk engine waiting for live session or simulation state.</div>
+      </div>
+
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Execution</h3>
+          <div class="hint">Uses exact selected duration in auto mode</div>
+        </div>
+        <div class="grid-4">
+          <div class="kv"><div class="k">Stake mode</div><div class="v" id="execStake">—</div></div>
+          <div class="kv"><div class="k">Duration</div><div class="v" id="execDuration">—</div></div>
+          <div class="kv"><div class="k">Early sell</div><div class="v" id="execSell">—</div></div>
+          <div class="kv"><div class="k">Execution state</div><div class="v" id="execState">—</div></div>
+        </div>
+        <div class="footer-note">Early close is attempted only when the live contract reports it is valid to sell. Contract profit shown on screen is never treated as a guarantee of executable sell value.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpanel" id="tab-strategy">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Strategy lab</h3>
+          <div class="hint">Indicator parameters, regime thresholds, and adaptive weights</div>
+        </div>
+        <div class="note">The strategy is candle-driven and transparent: EMA, RSI, MACD, Bollinger Bands, ATR, ADX proxy, and momentum/acceleration are each scored separately. The final bias is a weighted blend; no random “AI confidence” is used.</div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Indicator parameters</h3>
+        <div class="form-grid">
+          <div class="field"><label>EMA fast</label><input id="emaFast" type="number" min="2" value="9"></div>
+          <div class="field"><label>EMA slow</label><input id="emaSlow" type="number" min="3" value="21"></div>
+          <div class="field"><label>RSI period</label><input id="rsiPeriod" type="number" min="2" value="14"></div>
+          <div class="field"><label>MACD fast</label><input id="macdFast" type="number" min="2" value="12"></div>
+          <div class="field"><label>MACD slow</label><input id="macdSlow" type="number" min="3" value="26"></div>
+          <div class="field"><label>MACD signal</label><input id="macdSignal" type="number" min="2" value="9"></div>
+          <div class="field"><label>Boll period</label><input id="bbPeriod" type="number" min="5" value="20"></div>
+          <div class="field"><label>Boll std dev</label><input id="bbStd" type="number" step="0.1" min="1" value="2"></div>
+          <div class="field"><label>ATR period</label><input id="atrPeriod" type="number" min="2" value="14"></div>
+          <div class="field"><label>ADX period</label><input id="adxPeriod" type="number" min="2" value="14"></div>
+          <div class="field"><label>Momentum lookback</label><input id="momLookback" type="number" min="2" value="5"></div>
+          <div class="field"><label>Adapt learning rate</label><input id="learningRate" type="number" step="0.001" min="0.001" value="0.02"></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Regime thresholds</h3>
+        <div class="form-grid">
+          <div class="field"><label>Trend ADX threshold</label><input id="trendAdx" type="number" step="0.1" value="22"></div>
+          <div class="field"><label>Chop ADX ceiling</label><input id="chopAdx" type="number" step="0.1" value="18"></div>
+          <div class="field"><label>Noise ATR % limit</label><input id="noiseAtrPct" type="number" step="0.1" value="1.8"></div>
+          <div class="field"><label>Min samples to adapt</label><input id="minSamples" type="number" min="1" value="8"></div>
+          <div class="field"><label>Max weight drift</label><input id="maxDrift" type="number" step="0.01" value="0.20"></div>
+          <div class="field"><label>Weight decay</label><input id="weightDecay" type="number" step="0.001" value="0.004"></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Current weights by regime</h3>
+          <div class="hint">Weights are normalized and drift is capped</div>
+        </div>
+        <div id="weightsBox" class="weights-grid"></div>
+      </div>
+
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Regime and adaptation stats</h3>
+          <div class="hint">Recent performance used to nudge weights</div>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Regime</th>
+                <th>Samples</th>
+                <th>Win rate EMA</th>
+                <th>P&amp;L EMA</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="regimeStatsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpanel" id="tab-risk">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Risk panel</h3>
+          <div class="hint">Default posture is conservative</div>
+        </div>
+        <div class="danger-note">Browser bots have security and reliability limits. Live trading remains disarmed by default. Early close is never assumed to exist; it is checked from the live contract state before any sell attempt.</div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Core limits</h3>
+        <div class="form-grid">
+          <div class="field"><label>Stake mode</label><select id="stakeMode"><option value="fixed">Fixed stake</option><option value="pct">Stake % of balance</option></select></div>
+          <div class="field"><label>Fixed stake</label><input id="fixedStake" type="number" step="0.01" min="0" value="1"></div>
+          <div class="field"><label>Stake %</label><input id="stakePct" type="number" step="0.01" min="0" value="0.5"></div>
+          <div class="field"><label>Max stake cap</label><input id="maxStake" type="number" step="0.01" min="0" value="5"></div>
+          <div class="field"><label>Daily trade cap</label><input id="dailyCap" type="number" min="1" value="50"></div>
+          <div class="field"><label>Cooldown after loss (sec)</label><input id="cooldownSec" type="number" min="0" value="120"></div>
+          <div class="field"><label>Max consecutive losses</label><input id="maxLosses" type="number" min="1" value="3"></div>
+          <div class="field"><label>Max drawdown %</label><input id="maxDrawdown" type="number" step="0.1" min="0" value="10"></div>
+          <div class="field"><label>Daily loss limit</label><input id="dailyLoss" type="number" step="0.01" min="0" value="10"></div>
+          <div class="field"><label>Daily profit target</label><input id="dailyProfit" type="number" step="0.01" min="0" value="5"></div>
+          <div class="field"><label>Allow concurrent trades</label><select id="allowConcurrent"><option value="no">No</option><option value="yes">Yes</option></select></div>
+          <div class="field"><label>Confidence threshold</label><input id="confidenceThreshold" type="number" min="1" max="100" value="62"></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Profit management</h3>
+        <div class="form-grid">
+          <div class="field"><label>Early close enabled</label><select id="earlyClose"><option value="yes">Yes, if sell is available</option><option value="no">No</option></select></div>
+          <div class="field"><label>Close at profit</label><input id="fixedProfitClose" type="number" step="0.01" min="0" value="0.30"></div>
+          <div class="field"><label>Close at % profit</label><input id="pctProfitClose" type="number" step="0.1" min="0" value="20"></div>
+          <div class="field"><label>Trailing activate</label><input id="trailStart" type="number" step="0.01" min="0" value="0.20"></div>
+          <div class="field"><label>Trailing lock</label><input id="trailLock" type="number" step="0.01" min="0" value="0.10"></div>
+          <div class="field"><label>Time exit (sec)</label><input id="timeExit" type="number" min="0" value="0"></div>
+          <div class="field"><label>Martingale</label><select id="martingale"><option value="off">Off</option><option value="on">On (high risk)</option></select></div>
+          <div class="field"><label>Martingale factor</label><input id="martFactor" type="number" step="0.1" min="1" value="2"></div>
+          <div class="field"><label>Martingale steps</label><input id="martSteps" type="number" min="1" value="3"></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Time window filter</h3>
+        <div class="form-grid-2">
+          <div class="field"><label>Allowed from</label><input id="timeFrom" type="time" value="00:00"></div>
+          <div class="field"><label>Allowed to</label><input id="timeTo" type="time" value="23:59"></div>
+        </div>
+        <div class="footer-note">A trade is blocked when the current local time falls outside this window.</div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Session controls</h3>
+        <div class="kvs">
+          <div class="kv"><div class="k">Session equity start</div><div class="v" id="riskStartEquity">—</div></div>
+          <div class="kv"><div class="k">Peak equity</div><div class="v" id="riskPeakEquity">—</div></div>
+          <div class="kv"><div class="k">Drawdown</div><div class="v" id="riskDrawdown">—</div></div>
+          <div class="kv"><div class="k">Lockout</div><div class="v" id="riskLockout">—</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpanel" id="tab-blotter">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Trade blotter</h3>
+          <div class="hint">Closed live, demo, and shadow trades</div>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Mode</th><th>Direction</th><th>Regime</th><th>Stake</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>Status</th><th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="blotterTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Summary statistics</h3>
+        <div class="grid-2" id="statsSummary"></div>
+      </div>
+
+      <div class="card" style="grid-column:span 6">
+        <h3>Regime / setup performance</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Group</th><th>Trades</th><th>Win rate</th><th>Net P&amp;L</th><th>Expectancy</th></tr>
+            </thead>
+            <tbody id="perfTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpanel" id="tab-logs">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Logs / diagnostics</h3>
+          <div class="hint">Structured events and API messages</div>
+        </div>
+        <div class="right" style="margin-bottom:10px">
+          <button class="ghost" id="btnClearLogs">Clear logs</button>
+          <button class="ghost" id="btnReconnect">Reconnect</button>
+        </div>
+        <div id="logBox" class="logbox"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabpanel" id="tab-sim">
+    <div class="grid">
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Backtest / replay / simulation</h3>
+          <div class="hint">Best-effort replay of buffered candles; not a broker-grade historical backtest</div>
+        </div>
+        <div class="note">Because this is a pure browser file, the simulation replays recent buffered market data only. It is useful for relative strategy checks, but it is not equivalent to official server-side backtesting or true historical execution.</div>
+        <div class="right" style="margin-top:12px">
+          <button class="primary" id="btnRunSim">Run replay on buffer</button>
+          <button class="ghost" id="btnClearSim">Clear simulation</button>
+        </div>
+      </div>
+      <div class="card" style="grid-column:span 6">
+        <h3>Simulation metrics</h3>
+        <div class="grid-2">
+          <div class="metric"><div class="k">Win rate</div><div class="v" id="simWinRate">—</div></div>
+          <div class="metric"><div class="k">Profit factor</div><div class="v" id="simPF">—</div></div>
+          <div class="metric"><div class="k">Expectancy</div><div class="v" id="simExpectancy">—</div></div>
+          <div class="metric"><div class="k">Max drawdown</div><div class="v" id="simDD">—</div></div>
+          <div class="metric"><div class="k">Rolling 20</div><div class="v" id="simR20">—</div></div>
+          <div class="metric"><div class="k">Rolling 50</div><div class="v" id="simR50">—</div></div>
+        </div>
+      </div>
+      <div class="card" style="grid-column:span 6">
+        <h3>Replay equity curve</h3>
+        <canvas id="simChart" class="chart" width="900" height="260"></canvas>
+      </div>
+      <div class="card" style="grid-column:span 12">
+        <div class="section-title">
+          <h3>Simulation notes</h3>
+          <div class="hint">Transparent limitations</div>
+        </div>
+        <div class="danger-note">This panel uses buffered market data and the current strategy settings to approximate trade outcomes. It cannot reproduce broker-side fills, pricing nuances, or every contract detail. Use it as a risk-check, not as proof of live expectancy.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="help-overlay" id="helpOverlay">
+  <div class="help">
+    <div class="spaced">
+      <h2>Bot help and limitations</h2>
+      <button id="btnCloseHelp" class="ghost">Close</button>
+    </div>
+    <details open>
+      <summary>Real-money failure modes</summary>
+      <p>Strategy failure can come from spread, execution timing, bad regime classification, sudden volatility shifts, stale data, API interruptions, and overfitting. The bot therefore blocks trades unless the readiness checklist passes.</p>
+    </details>
+    <details>
+      <summary>Before going live</summary>
+      <p>Test in demo or shadow mode first. Confirm the token has the required permissions, the symbol is correct, the duration is exact, and the risk caps are acceptable. Keep live trading disarmed until you are deliberately ready.</p>
+    </details>
+    <details>
+      <summary>Early-sell / contract limitations</summary>
+      <p>Not every contract can be closed early. This app checks the live open-contract state before attempting a sell. If the broker reports that a contract is not valid to sell, the sell button is disabled and the reason is shown instead of pretending otherwise.</p>
+    </details>
+    <details>
+      <summary>Browser reliability limitations</summary>
+      <p>Local browser execution depends on tab uptime, WebSocket stability, and device/network health. If the tab suspends or the connection drops, the app pauses new entries and logs the disruption. A browser bot is not a server process.</p>
+    </details>
+    <details>
+      <summary>Strategy adaptation limitations</summary>
+      <p>Adaptive weights are intentionally capped and decay slowly. The bot uses recent outcomes to nudge weights, but it does not assume markets are stationary and it does not chase recent wins aggressively.</p>
+    </details>
+  </div>
+</div>
+
 <script>
 (() => {
-  const STORAGE_KEY = 'marsbot_v12_survival_state';
-  const DEFAULT_SYMBOL = 'R_50';
-  const REQUEST_ID = () => Math.floor(Date.now() % 1e9);
+  'use strict';
 
-  const ui = {};
-  [
-    'connectionChip','appId','accessToken','connectBtn','disconnectBtn','startBtn','tradeNowBtn','resetBtn','settingsToggle',
-    'settingsPanel','confirmTrades','soundAlerts','martingaleToggle','symbol','stake','maxStake','duration','durationUnit',
-    'sessionLossLimit','cooldownMs','martingaleMultiplier','martingaleSteps','maxLossStreak','rsiBuy','rsiSell','volMin',
-    'confidenceThreshold','closeProfitTarget','closeLossTarget','closeOnProfit','closeOnLoss','useContractUpdate',
-    'maxExposurePct','currency',
-    'statusDot','statusText','statusMessage','lastTrade','connectionInfo','modeStatus','lossStreak','aiConfidence','totalTrades',
-    'winRate','profit','sessionLoss','currentStake','openProfit','balance','chart','tradeHistory','signalLabel','optimiserSummary',
-    'apiOutput','profitTargetLabel','riskLockLabel'
-  ].forEach((id) => ui[id] = document.getElementById(id));
-
-  const defaults = {
-    appId: '',
-    accessToken: '',
-    symbol: DEFAULT_SYMBOL,
-    stake: 1,
-    maxStake: 100,
-    duration: 1,
-    durationUnit: 'm',
-    sessionLossLimit: 30,
-    cooldownMs: 5000,
-    martingaleEnabled: false,
-    martingaleMultiplier: 1.5,
-    martingaleSteps: 2,
-    maxLossStreak: 3,
-    confirmTrades: false,
-    soundAlerts: true,
-    rsiBuy: 35,
-    rsiSell: 65,
-    volMin: 0.2,
-    confidenceThreshold: 0.55,
-    closeProfitTarget: 0.25,
-    closeLossTarget: 0.50,
-    closeOnProfit: true,
-    closeOnLoss: true,
-    useContractUpdate: true,
-    maxExposurePct: 1.0,
-    currency: 'USD'
+  const DEFAULTS = {
+    endpoint: 'wss://ws.derivws.com/websockets/v3',
+    appId: 1089,
+    symbol: 'R_50',
+    currency: 'USD',
+    mode: 'demo'
   };
 
-  let settings = { ...defaults };
-  let optimiser = { windowSize: 12 };
-  let ws = null;
-  let isConnected = false;
-  let isAuthorized = false;
-  let isRunning = false;
-  let isTradeOpen = false;
-  let awaitingProposal = false;
-  let currentContractId = null;
-  let currentTrade = null;
-  let currentStake = defaults.stake;
-  let currentBalance = null;
-  let liveOpenProfit = 0;
-  let cooldownUntil = 0;
-  let lastTradeAt = 0;
-  let reqId = REQUEST_ID();
-  let prices = [];
-  let tradeMarkers = [];
-  let tradeHistory = [];
-  let optimiserHistory = [];
-  let aiMemory = { patterns: {} };
-  let lastSignal = null;
-  let activeAudioContext = null;
-
-  let metrics = {
-    trades: 0,
-    wins: 0,
-    profit: 0,
-    sessionPnL: 0,
-    sessionLoss: 0,
-    lossStreak: 0,
-    martingaleStep: 0,
-    mode: 'STOPPED',
-    lastConfidence: 0
-  };
-
-  function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-  }
-
-  function toNum(value, fallback = 0) {
-    const n = Number.parseFloat(value);
+  const $ = (id) => document.getElementById(id);
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const toNum = (v, fallback = 0) => {
+    const n = typeof v === 'number' ? v : parseFloat(v);
     return Number.isFinite(n) ? n : fallback;
-  }
+  };
+  const toInt = (v, fallback = 0) => {
+    const n = typeof v === 'number' ? v : parseInt(v, 10);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const fmtNum = (n, d = 2) => Number.isFinite(n) ? n.toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d}) : '—';
+  const fmtPct = (n, d = 1) => Number.isFinite(n) ? `${n.toFixed(d)}%` : '—';
+  const fmtMoney = (n, c = 'USD') => Number.isFinite(n) ? `${c} ${n.toFixed(2)}` : '—';
+  const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '—';
+  const fmtDateTime = (ts) => ts ? new Date(ts).toLocaleString([], {month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'}) : '—';
+  const deepClone = (x) => JSON.parse(JSON.stringify(x));
+  const norm = (x) => clamp(x, -1, 1);
 
-  function money(value) {
-    const n = Number(value) || 0;
-    return `$${Math.abs(n).toFixed(2)}`;
-  }
+  const baseWeights = {
+    trend: { ema: 0.22, rsi: 0.10, macd: 0.22, bb: 0.10, adx: 0.22, mom: 0.14 },
+    chop:  { ema: 0.12, rsi: 0.24, macd: 0.10, bb: 0.24, adx: 0.10, mom: 0.20 },
+    none:  { ema: 0.10, rsi: 0.15, macd: 0.15, bb: 0.10, adx: 0.20, mom: 0.15 }
+  };
 
-  function signedMoney(value) {
-    const n = Number(value) || 0;
-    const sign = n >= 0 ? '+' : '-';
-    return `${sign}$${Math.abs(n).toFixed(2)}`;
-  }
+  const defaultStrategy = {
+    emaFast: 9, emaSlow: 21,
+    rsiPeriod: 14, macdFast: 12, macdSlow: 26, macdSignal: 9,
+    bbPeriod: 20, bbStd: 2.0, atrPeriod: 14, adxPeriod: 14, momLookback: 5,
+    trendAdx: 22, chopAdx: 18, noiseAtrPct: 1.8,
+    learningRate: 0.02, minSamples: 8, maxDrift: 0.20, weightDecay: 0.004
+  };
 
-  function saveState() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, optimiser }));
-    } catch (_) {}
-  }
+  const defaultRisk = {
+    stakeMode: 'fixed',
+    fixedStake: 1,
+    stakePct: 0.5,
+    maxStake: 5,
+    dailyCap: 50,
+    cooldownSec: 120,
+    maxLosses: 3,
+    maxDrawdown: 10,
+    dailyLoss: 10,
+    dailyProfit: 5,
+    allowConcurrent: false,
+    confidenceThreshold: 62,
+    earlyClose: true,
+    fixedProfitClose: 0.30,
+    pctProfitClose: 20,
+    trailStart: 0.20,
+    trailLock: 0.10,
+    timeExit: 0,
+    martingale: false,
+    martFactor: 2,
+    martSteps: 3,
+    timeFrom: '00:00',
+    timeTo: '23:59',
+    shadowMode: false,
+    liveArmed: false,
+    autoReconnect: true
+  };
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.settings) settings = { ...settings, ...parsed.settings };
-      if (parsed?.optimiser) optimiser = { ...optimiser, ...parsed.optimiser };
-    } catch (_) {}
-  }
+  class DerivAPIClient {
+    constructor(app){
+      this.app = app;
+      this.ws = null;
+      this.connected = false;
+      this.authorized = false;
+      this.endpoint = DEFAULTS.endpoint;
+      this.appId = DEFAULTS.appId;
+      this.reqId = 1;
+      this.pending = new Map();
+      this.reconnectAttempts = 0;
+      this.reconnectTimer = null;
+      this.autoReconnect = true;
+      this.token = '';
+      this.wasAuthorized = false;
+      this.handlers = { open:[], close:[], error:[], message:[] };
+    }
+    on(evt, fn){ (this.handlers[evt] || (this.handlers[evt]=[])).push(fn); }
+    emit(evt, payload){ (this.handlers[evt] || []).forEach(fn => { try{ fn(payload); }catch(e){ console.error(e); } }); }
 
-  function fillInputs() {
-    ui.appId.value = settings.appId;
-    ui.accessToken.value = settings.accessToken;
-    ui.symbol.value = settings.symbol;
-    ui.stake.value = settings.stake;
-    ui.maxStake.value = settings.maxStake;
-    ui.duration.value = settings.duration;
-    ui.durationUnit.value = settings.durationUnit;
-    ui.sessionLossLimit.value = settings.sessionLossLimit;
-    ui.cooldownMs.value = settings.cooldownMs;
-    ui.martingaleToggle.value = settings.martingaleEnabled ? 'on' : 'off';
-    ui.martingaleMultiplier.value = settings.martingaleMultiplier;
-    ui.martingaleSteps.value = settings.martingaleSteps;
-    ui.maxLossStreak.value = settings.maxLossStreak;
-    ui.confirmTrades.checked = settings.confirmTrades;
-    ui.soundAlerts.checked = settings.soundAlerts;
-    ui.rsiBuy.value = settings.rsiBuy;
-    ui.rsiSell.value = settings.rsiSell;
-    ui.volMin.value = settings.volMin;
-    ui.confidenceThreshold.value = settings.confidenceThreshold;
-    ui.closeProfitTarget.value = settings.closeProfitTarget;
-    ui.closeLossTarget.value = settings.closeLossTarget;
-    ui.closeOnProfit.checked = settings.closeOnProfit;
-    ui.closeOnLoss.checked = settings.closeOnLoss;
-    ui.useContractUpdate.checked = settings.useContractUpdate;
-    ui.maxExposurePct.value = settings.maxExposurePct;
-    ui.currency.value = settings.currency;
-    currentStake = settings.stake;
-  }
-
-  function syncFromInputs() {
-    settings.appId = ui.appId.value.trim();
-    settings.accessToken = ui.accessToken.value.trim();
-    settings.symbol = ui.symbol.value.trim() || DEFAULT_SYMBOL;
-    settings.stake = clamp(toNum(ui.stake.value, 1), 0.1, 100000);
-    settings.maxStake = clamp(toNum(ui.maxStake.value, 100), settings.stake, 100000);
-    settings.duration = Math.max(1, Math.floor(toNum(ui.duration.value, 1)));
-    settings.durationUnit = ui.durationUnit.value;
-    settings.sessionLossLimit = clamp(toNum(ui.sessionLossLimit.value, 30), 1, 100000);
-    settings.cooldownMs = clamp(toNum(ui.cooldownMs.value, 5000), 1000, 3600000);
-    settings.martingaleEnabled = ui.martingaleToggle.value === 'on';
-    settings.martingaleMultiplier = clamp(toNum(ui.martingaleMultiplier.value, 1.5), 1.1, 5);
-    settings.martingaleSteps = Math.floor(clamp(toNum(ui.martingaleSteps.value, 2), 0, 10));
-    settings.maxLossStreak = Math.floor(clamp(toNum(ui.maxLossStreak.value, 3), 1, 20));
-    settings.confirmTrades = ui.confirmTrades.checked;
-    settings.soundAlerts = ui.soundAlerts.checked;
-    settings.rsiBuy = clamp(toNum(ui.rsiBuy.value, 35), 5, 49);
-    settings.rsiSell = clamp(toNum(ui.rsiSell.value, 65), 51, 95);
-    settings.volMin = clamp(toNum(ui.volMin.value, 0.2), 0.01, 10);
-    settings.confidenceThreshold = clamp(toNum(ui.confidenceThreshold.value, 0.55), 0, 1);
-    settings.closeProfitTarget = clamp(toNum(ui.closeProfitTarget.value, 0.25), 0.01, 100000);
-    settings.closeLossTarget = clamp(toNum(ui.closeLossTarget.value, 0.50), 0.01, 100000);
-    settings.closeOnProfit = ui.closeOnProfit.checked;
-    settings.closeOnLoss = ui.closeOnLoss.checked;
-    settings.useContractUpdate = ui.useContractUpdate.checked;
-    settings.maxExposurePct = clamp(toNum(ui.maxExposurePct.value, 1.0), 0.1, 10);
-    settings.currency = ui.currency.value;
-    currentStake = clamp(currentStake || settings.stake, 0.1, settings.maxStake);
-    updateOptimiserSummary();
-    updateRiskSummary();
-    updateUI();
-    saveState();
-  }
-
-  function setMessage(text, tone = 'info') {
-    const styles = {
-      info:    { fg: '#d1d5db', bg: 'rgba(59,130,246,.08)', border: 'rgba(59,130,246,.35)' },
-      success: { fg: '#86efac', bg: 'rgba(34,197,94,.08)', border: 'rgba(34,197,94,.35)' },
-      warn:    { fg: '#fde68a', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.35)' },
-      error:   { fg: '#fca5a5', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.35)' }
-    };
-    const c = styles[tone] || styles.info;
-    ui.statusMessage.textContent = text;
-    ui.statusMessage.style.color = c.fg;
-    ui.statusMessage.style.background = c.bg;
-    ui.statusMessage.style.borderColor = c.border;
-  }
-
-  function setChip(text, tone = 'info') {
-    const styles = {
-      info:    { dot: '#60a5fa', bg: '#151515', border: '#2a2a2a' },
-      success: { dot: '#22c55e', bg: 'rgba(34,197,94,.08)', border: 'rgba(34,197,94,.35)' },
-      warn:    { dot: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.35)' },
-      error:   { dot: '#ef4444', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.35)' }
-    };
-    const c = styles[tone] || styles.info;
-    ui.statusText.textContent = text;
-    ui.statusDot.style.background = c.dot;
-    if (ui.connectionChip) { ui.connectionChip.style.background = c.bg; ui.connectionChip.style.borderColor = c.border; }
-  }
-
-  function beep(type = 'win') {
-    if (!settings.soundAlerts) return;
-    try {
-      activeAudioContext = activeAudioContext || new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = activeAudioContext;
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.value = 0.02;
-      if (type === 'win') {
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 880;
-      } else {
-        oscillator.type = 'triangle';
-        oscillator.frequency.value = 220;
+    buildUrl(){
+      let url = this.endpoint || DEFAULTS.endpoint;
+      if (!/^wss?:\/\//i.test(url)) url = 'wss://' + url;
+      if (String(this.appId || '').trim()) {
+        const hasQuery = url.includes('?');
+        if (!/[\?&]app_id=/i.test(url)) url += `${hasQuery ? '&' : '?'}app_id=${encodeURIComponent(this.appId)}`;
       }
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + (type === 'win' ? 0.11 : 0.16));
-    } catch (_) {}
-  }
-
-  function EMA(period, data) {
-    if (!data.length) return 0;
-    const k = 2 / (period + 1);
-    let ema = data[0];
-    for (let i = 1; i < data.length; i++) ema = data[i] * k + ema * (1 - k);
-    return ema;
-  }
-
-  function RSI(data, period = 14) {
-    if (data.length < period + 1) return 50;
-    let gains = 0;
-    let losses = 0;
-    const start = data.length - period - 1;
-    for (let i = start; i < data.length - 1; i++) {
-      const diff = data[i + 1] - data[i];
-      if (diff > 0) gains += diff;
-      else losses -= diff;
-    }
-    const rs = gains / (losses || 1);
-    return 100 - (100 / (1 + rs));
-  }
-
-  function avgAbsChange(windowSize = 8) {
-    if (prices.length < 2) return 0;
-    const start = Math.max(1, prices.length - windowSize);
-    let total = 0;
-    let count = 0;
-    for (let i = start; i < prices.length; i++) {
-      total += Math.abs(prices[i] - prices[i - 1]);
-      count++;
-    }
-    return count ? total / count : 0;
-  }
-
-  function trendStrength() {
-    if (prices.length < 21) return 0;
-    const fast = EMA(9, prices);
-    const slow = EMA(21, prices);
-    const last = prices[prices.length - 1] || 1;
-    return Math.abs(fast - slow) / last;
-  }
-
-  function getPatternKey() {
-    if (prices.length < 8) return 'boot';
-    let seq = '';
-    const start = Math.max(1, prices.length - 8);
-    for (let i = start; i < prices.length; i++) {
-      const diff = prices[i] - prices[i - 1];
-      seq += diff > 0 ? 'U' : diff < 0 ? 'D' : 'F';
-    }
-    const vol = avgAbsChange(8);
-    const bucket = vol < 0.15 ? 'L' : vol < 0.35 ? 'M' : 'H';
-    return `${seq}_${bucket}`;
-  }
-
-  function ensurePattern(key) {
-    if (!aiMemory.patterns[key]) {
-      aiMemory.patterns[key] = {
-        CALL: { wins: 0, losses: 0 },
-        PUT: { wins: 0, losses: 0 }
-      };
-    }
-    return aiMemory.patterns[key];
-  }
-
-  function confidenceFor(patternKey, direction, rsi, emaFast, emaSlow, vol) {
-    const pattern = ensurePattern(patternKey);
-    const stats = pattern[direction];
-    const total = stats.wins + stats.losses;
-    const trend = Math.abs(emaFast - emaSlow) / Math.max(1, prices[prices.length - 1] || 1);
-    let confidence = 0.5;
-    confidence += clamp(trend * 8, 0, 0.12);
-    confidence += clamp(Math.abs(direction === 'CALL' ? 50 - rsi : rsi - 50) / 100, 0, 0.15);
-    if (total > 0) confidence += clamp(((stats.wins - stats.losses) / total) * 0.28, -0.28, 0.28);
-    if (vol > settings.volMin * 2) confidence += 0.05;
-    return clamp(confidence, 0, 1);
-  }
-
-  function evaluateSignal() {
-    if (prices.length < 30) return null;
-    const emaFast = EMA(9, prices);
-    const emaSlow = EMA(21, prices);
-    const rsi = RSI(prices, 14);
-    const vol = avgAbsChange(8);
-    const patternKey = getPatternKey();
-    const trend = trendStrength();
-    let direction = null;
-
-    if (rsi <= settings.rsiBuy && emaFast > emaSlow) direction = 'CALL';
-    if (rsi >= settings.rsiSell && emaFast < emaSlow) direction = 'PUT';
-    if (!direction) return null;
-    if (vol < settings.volMin) return null;
-    if (trend < 0.00015) return null;
-
-    const confidence = confidenceFor(patternKey, direction, rsi, emaFast, emaSlow, vol);
-    if (confidence < settings.confidenceThreshold) return null;
-
-    return { direction, confidence, patternKey, rsi, emaFast, emaSlow, vol, trend };
-  }
-
-  function updateOptimiserSummary() {
-    ui.optimiserSummary.textContent = `RSI ${settings.rsiBuy}/${settings.rsiSell} • Vol ≥ ${settings.volMin.toFixed(2)} • Conf ≥ ${(settings.confidenceThreshold * 100).toFixed(0)}%`;
-    ui.profitTargetLabel.textContent = money(settings.closeProfitTarget);
-  }
-
-  function updateRiskSummary() {
-    const locked = metrics.lossStreak >= 2 ? 'Tight' : 'Normal';
-    ui.riskLockLabel.textContent = locked;
-  }
-
-  function updateModeTransition() {
-    if (metrics.mode === 'COOLDOWN' && Date.now() >= cooldownUntil) {
-      metrics.mode = isRunning ? 'NORMAL' : 'STOPPED';
-      cooldownUntil = 0;
-      setMessage('Cooldown ended.', 'info');
-    }
-  }
-
-  function setCooldown(reason, duration = 60000) {
-    cooldownUntil = Date.now() + duration;
-    metrics.mode = 'COOLDOWN';
-    setChip('Cooldown', 'warn');
-    setMessage(reason, 'warn');
-  }
-
-  function autoTuneOptimiser() {
-    if (optimiserHistory.length < optimiser.windowSize) return;
-    const recent = optimiserHistory.slice(-optimiser.windowSize);
-    const wins = recent.filter((x) => x > 0).length;
-    const winRate = wins / recent.length;
-    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-
-    if (avg < 0 || winRate < 0.45) {
-      settings.rsiBuy = clamp(settings.rsiBuy - 1, 5, 49);
-      settings.rsiSell = clamp(settings.rsiSell + 1, 51, 95);
-      settings.volMin = clamp(settings.volMin + 0.01, 0.01, 10);
-      settings.confidenceThreshold = clamp(settings.confidenceThreshold + 0.03, 0, 1);
-      settings.closeProfitTarget = clamp(settings.closeProfitTarget - 0.02, 0.01, 100000);
-      settings.closeLossTarget = clamp(settings.closeLossTarget - 0.02, 0.01, 100000);
-    } else if (avg > 0 && winRate > 0.6) {
-      settings.rsiBuy = clamp(settings.rsiBuy + 1, 5, 49);
-      settings.rsiSell = clamp(settings.rsiSell - 1, 51, 95);
-      settings.volMin = clamp(settings.volMin - 0.01, 0.01, 10);
-      settings.confidenceThreshold = clamp(settings.confidenceThreshold - 0.02, 0, 1);
-      settings.closeProfitTarget = clamp(settings.closeProfitTarget + 0.01, 0.01, 100000);
+      return url;
     }
 
-    ui.rsiBuy.value = settings.rsiBuy;
-    ui.rsiSell.value = settings.rsiSell;
-    ui.volMin.value = settings.volMin.toFixed(2);
-    ui.confidenceThreshold.value = settings.confidenceThreshold.toFixed(2);
-    ui.closeProfitTarget.value = settings.closeProfitTarget.toFixed(2);
-    ui.closeLossTarget.value = settings.closeLossTarget.toFixed(2);
-    updateOptimiserSummary();
-  }
-
-  function rebalanceStake() {
-    const balanceCap = currentBalance ? (currentBalance * (settings.maxExposurePct / 100)) : settings.maxStake;
-    let target = settings.stake;
-    const recent = optimiserHistory.slice(-Math.max(6, optimiser.windowSize));
-    const winRate = recent.length ? recent.filter((x) => x > 0).length / recent.length : 0.5;
-
-    if (metrics.lossStreak >= 2) target *= 0.75;
-    if (winRate < 0.45) target *= 0.85;
-    if (winRate > 0.6) target *= 1.05;
-    if (settings.martingaleEnabled && metrics.martingaleStep > 0) {
-      target = Math.max(target, currentStake);
-    }
-
-    currentStake = clamp(target, 0.1, Math.min(settings.maxStake, balanceCap || settings.maxStake));
-  }
-
-  function renderHistory() {
-    if (!tradeHistory.length) {
-      ui.tradeHistory.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500">No trades yet</td></tr>`;
-      return;
-    }
-
-    ui.tradeHistory.innerHTML = tradeHistory.slice(0, 20).map((t) => {
-      const resultColor = t.result === 'WIN' ? '#4ade80' : '#f87171';
-      const profitColor = t.profit >= 0 ? '#4ade80' : '#f87171';
-      const profitSign = t.profit >= 0 ? '+' : '-';
-      return `
-        <tr>
-          <td class="px-4 py-3 text-sm text-gray-300">${t.time}</td>
-          <td class="px-4 py-3 text-sm text-gray-300">${t.direction}</td>
-          <td class="px-4 py-3 text-sm text-right text-gray-300">${money(t.stake)}</td>
-          <td class="px-4 py-3 text-sm text-right text-gray-300">${(t.confidence * 100).toFixed(0)}%</td>
-          <td class="px-4 py-3 text-sm text-right text-gray-300">${money(t.openProfit)}</td>
-          <td class="px-4 py-3 text-sm text-gray-300">${t.pattern}</td>
-          <td class="px-4 py-3 text-sm text-gray-300">${t.exitReason}</td>
-          <td class="px-4 py-3 text-sm text-right font-medium" style="color:${resultColor};">${t.result}</td>
-          <td class="px-4 py-3 text-sm text-right font-medium" style="color:${profitColor};">${profitSign}${money(Math.abs(t.profit)).slice(1)}</td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  function drawChart() {
-    const canvas = ui.chart;
-    const ctx = canvas.getContext('2d');
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(0, 0, w, h);
-
-    if (prices.length < 2) {
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '14px sans-serif';
-      ctx.fillText('Waiting for price data...', 18, 28);
-      return;
-    }
-
-    const pad = 16;
-    const max = Math.max(...prices);
-    const min = Math.min(...prices);
-    const range = max - min || 1;
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 4; i++) {
-      const y = pad + ((h - pad * 2) / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(pad, y);
-      ctx.lineTo(w - pad, y);
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = '#60a5fa';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    prices.forEach((price, i) => {
-      const x = pad + (i / (prices.length - 1)) * (w - pad * 2);
-      const y = h - pad - ((price - min) / range) * (h - pad * 2);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    tradeMarkers.forEach((m) => {
-      if (m.index < 0 || m.index >= prices.length) return;
-      const x = pad + (m.index / (prices.length - 1)) * (w - pad * 2);
-      const y = h - pad - ((prices[m.index] - min) / range) * (h - pad * 2);
-      const color = m.result === 'WIN' ? '#22c55e' : m.result === 'LOSS' ? '#ef4444' : '#f59e0b';
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    ctx.fillStyle = '#d1d5db';
-    ctx.font = '12px sans-serif';
-    ctx.fillText(`Last: ${prices[prices.length - 1].toFixed(2)}`, pad, 14);
-  }
-
-  function resizeChart() {
-    const canvas = ui.chart;
-    const parent = canvas.parentElement;
-    const cssWidth = Math.max(300, parent.clientWidth);
-    const cssHeight = 220;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.style.height = `${cssHeight}px`;
-    canvas.width = Math.floor(cssWidth * dpr);
-    canvas.height = Math.floor(cssHeight * dpr);
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawChart();
-  }
-
-  function updateUI() {
-    updateModeTransition();
-    ui.totalTrades.textContent = metrics.trades;
-    ui.winRate.textContent = metrics.trades ? `${((metrics.wins / metrics.trades) * 100).toFixed(1)}%` : '0.0%';
-    ui.profit.textContent = signedMoney(metrics.profit);
-    ui.profit.style.color = metrics.profit >= 0 ? '#4ade80' : '#f87171';
-    ui.sessionLoss.textContent = money(metrics.sessionLoss);
-    ui.sessionLoss.style.color = '#f87171';
-    ui.currentStake.textContent = money(currentStake);
-    ui.balance.textContent = currentBalance == null ? '—' : money(currentBalance);
-    ui.openProfit.textContent = signedMoney(liveOpenProfit);
-    ui.openProfit.style.color = liveOpenProfit >= 0 ? '#4ade80' : '#f87171';
-    ui.lossStreak.textContent = metrics.lossStreak;
-    ui.modeStatus.textContent = metrics.mode;
-    ui.aiConfidence.textContent = `${(metrics.lastConfidence * 100).toFixed(0)}%`;
-    ui.lastTrade.textContent = currentTrade
-      ? `Last trade: ${currentTrade.direction} | ${currentTrade.result || 'pending'}${currentTrade.profit !== undefined ? ` (${signedMoney(currentTrade.profit)})` : ''}`
-      : 'Last trade: none';
-    ui.connectionInfo.textContent = `Market: ${settings.symbol} • ${isConnected ? 'Connected' : 'Not connected'}`;
-    ui.signalLabel.textContent = lastSignal ? `${lastSignal.direction} • ${(lastSignal.confidence * 100).toFixed(0)}%` : 'Waiting';
-    updateOptimiserSummary();
-    updateRiskSummary();
-    renderHistory();
-    drawChart();
-  }
-
-  function apiOutput(label, payload) {
-    const text = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
-    ui.apiOutput.textContent = `${label}\n\n${text}`;
-  }
-
-async function connectDeriv() {
-  syncFromInputs();
-  if (!settings.appId || !settings.accessToken) {
-    setMessage('App ID and Access Token are required.', 'error');
-    return;
-  }
-  if (!confirm('Connect MarsBot to Deriv using the regular WebSocket API now?')) return;
-  try {
-    isAuthorized = false;
-    setMessage('Opening regular Deriv WebSocket...', 'info');
-    openSocket(`wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(settings.appId)}`);
-  } catch (err) {
-    setChip('Disconnected', 'error');
-    setMessage(err.message, 'error');
-    apiOutput('Connect failed', err.message);
-  }
-}
-
-
-function openSocket(wsUrl) {
-  try { if (ws) ws.close(); } catch (_) {}
-  ws = new WebSocket(wsUrl);
-
-  ws.onopen = () => {
-    isConnected = false;
-    isAuthorized = false;
-    metrics.mode = isRunning ? 'NORMAL' : 'STOPPED';
-    setChip('Connected', 'info');
-    setMessage('WebSocket connected. Authorizing...', 'info');
-    sendWs({ authorize: settings.accessToken, req_id: ++reqId });
-    updateUI();
-  };
-
-  ws.onmessage = (evt) => {
-    let d;
-    try { d = JSON.parse(evt.data); } catch (_) { return; }
-
-    if (d.error) {
-      awaitingProposal = false;
-      isTradeOpen = false;
-      setMessage(d.error.message || 'Deriv API error.', 'error');
-      apiOutput('WS error', d);
-      updateUI();
-      return;
-    }
-
-    if (d.authorize) {
-      isAuthorized = true;
-      isConnected = true;
-      setChip(isRunning ? 'Running' : 'Connected', isRunning ? 'success' : 'info');
-      setMessage('Authorized. Subscribing to balance, portfolio, and ticks...', 'success');
-      subscribeBaseStreams();
-      updateUI();
-      return;
-    }
-
-    if (!isAuthorized) {
-      apiOutput('Pre-auth message', d);
-      return;
-    }
-
-    if (d.balance) {
-      currentBalance = toNum(d.balance.balance, currentBalance ?? 0);
-      updateUI();
-      return;
-    }
-
-    if (d.portfolio) {
-      apiOutput('Portfolio update', d);
-      return;
-    }
-
-    if (d.tick && typeof d.tick.quote === 'number') {
-      prices.push(d.tick.quote);
-      if (prices.length > 200) prices.shift();
-      drawChart();
-      if (isRunning) runBot();
-      return;
-    }
-
-    if (d.proposal) {
-      handleProposal(d.proposal);
-      return;
-    }
-
-    if (d.buy) {
-      handleBuy(d.buy);
-      return;
-    }
-
-    if (d.proposal_open_contract) {
-      handleOpenContract(d.proposal_open_contract);
-      return;
-    }
-
-    if (d.sell) {
-      apiOutput('Sell response', d);
-      return;
-    }
-
-    if (d.contract_update) {
-      apiOutput('Contract update response', d);
-      return;
-    }
-  };
-
-  ws.onclose = () => {
-    isConnected = false;
-    isAuthorized = false;
-    isTradeOpen = false;
-    awaitingProposal = false;
-    currentContractId = null;
-    currentTrade = null;
-    setChip('Disconnected', 'info');
-    setMessage('WebSocket disconnected.', 'warn');
-    updateUI();
-  };
-
-  ws.onerror = () => setMessage('WebSocket error occurred.', 'error');
-}
-
-  function subscribeBaseStreams() {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    sendWs({ balance: 1, subscribe: 1, req_id: ++reqId });
-    sendWs({ portfolio: 1, subscribe: 1, req_id: ++reqId });
-    sendWs({ ticks: settings.symbol, subscribe: 1, req_id: ++reqId });
-  }
-
-  function sendWs(payload) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify(payload));
-  }
-
-
-function requestProposal(signal) {
-  awaitingProposal = true;
-  currentTrade = {
-    direction: signal.direction,
-    confidence: signal.confidence,
-    pattern: signal.patternKey,
-    stake: currentStake,
-    entryIndex: Math.max(0, prices.length - 1),
-    openProfit: 0,
-    exitReason: 'waiting',
-    closeRequested: false
-  };
-  sendWs({
-    proposal: 1,
-    amount: currentStake,
-    basis: 'stake',
-    contract_type: signal.direction,
-    currency: settings.currency,
-    duration: settings.duration,
-    duration_unit: settings.durationUnit,
-    underlying_symbol: settings.symbol,
-    req_id: ++reqId
-  });
-  setMessage(`Requesting proposal for ${signal.direction}...`, 'info');
-}
-
-  function handleProposal(proposal) {
-    if (!awaitingProposal || !currentTrade) return;
-    awaitingProposal = false;
-    const proposalId = proposal?.id;
-    const askPrice = toNum(proposal?.ask_price, currentStake);
-    if (!proposalId) {
-      setMessage('Proposal response did not include an ID.', 'error');
-      currentTrade = null;
-      return;
-    }
-    sendWs({ buy: proposalId, price: askPrice, req_id: ++reqId });
-    setMessage(`Buying ${currentTrade.direction} contract...`, 'info');
-  }
-
-  function handleBuy(buy) {
-    const contractId = buy?.contract_id;
-    if (!contractId) {
-      setMessage('Buy response did not include a contract ID.', 'error');
-      isTradeOpen = false;
-      currentTrade = null;
-      return;
-    }
-    currentContractId = contractId;
-    isTradeOpen = true;
-    if (currentTrade) {
-      currentTrade.contractId = contractId;
-      currentTrade.entryTime = new Date().toLocaleTimeString();
-      currentTrade.exitReason = 'open';
-    }
-    sendWs({ proposal_open_contract: 1, contract_id: contractId, subscribe: 1, req_id: ++reqId });
-    if (settings.useContractUpdate) {
-      sendWs({
-        contract_update: 1,
-        contract_id: contractId,
-        limit_order: {
-          take_profit: settings.closeProfitTarget,
-          stop_loss: settings.closeLossTarget
-        },
-        req_id: ++reqId
+    connect(endpoint, appId){
+      this.endpoint = endpoint || DEFAULTS.endpoint;
+      this.appId = appId || DEFAULTS.appId;
+      this.autoReconnect = !!this.app.state.settings.risk.autoReconnect;
+      if (this.ws && (this.ws.readyState === 0 || this.ws.readyState === 1)) return Promise.resolve(true);
+      return new Promise((resolve, reject) => {
+        try {
+          const ws = new WebSocket(this.buildUrl());
+          this.ws = ws;
+          const openTimeout = setTimeout(() => {
+            if (!this.connected) reject(new Error('WebSocket connection timed out'));
+          }, 12000);
+          ws.onopen = () => {
+            clearTimeout(openTimeout);
+            this.connected = true;
+            this.reconnectAttempts = 0;
+            this.emit('open');
+            this.app.log('info', 'ws', 'WebSocket connected');
+            resolve(true);
+          };
+          ws.onerror = (e) => {
+            this.emit('error', e);
+            this.app.log('error', 'ws', 'WebSocket error');
+          };
+          ws.onclose = () => {
+            clearTimeout(openTimeout);
+            const was = this.connected;
+            this.connected = false;
+            this.authorized = false;
+            this.emit('close');
+            this.rejectAllPending(new Error('WebSocket closed'));
+            if (was) this.app.log('warn', 'ws', 'WebSocket closed');
+            if (this.autoReconnect && this.token && this.app.state.settings.risk.autoReconnect) this.scheduleReconnect();
+          };
+          ws.onmessage = (ev) => this.handleMessage(ev.data);
+        } catch (err) {
+          reject(err);
+        }
       });
     }
-    lastTradeAt = Date.now();
-    setMessage(`Trade opened. Contract ID: ${contractId}`, 'success');
-    updateUI();
-  }
 
-  function maybeCloseForProfit(contract) {
-    if (!settings.closeOnProfit || !currentTrade || currentTrade.closeRequested) return;
-    const cp = toNum(contract?.current_profit, 0);
-    if (cp >= settings.closeProfitTarget) {
-      currentTrade.closeRequested = true;
-      currentTrade.exitReason = 'profit target';
-      sendWs({ sell: currentContractId, price: 0, req_id: ++reqId });
-      setMessage(`Profit target reached: ${signedMoney(cp)}. Closing trade...`, 'success');
+    scheduleReconnect(){
+      if (this.reconnectTimer) return;
+      const delay = clamp(1000 * Math.pow(1.7, this.reconnectAttempts++), 1500, 15000);
+      this.app.log('warn', 'ws', `Reconnecting in ${Math.round(delay/1000)}s`);
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null;
+        this.connect(this.endpoint, this.appId)
+          .then(() => {
+            if (this.token) this.authorize(this.token).catch(() => {});
+          })
+          .catch(err => this.app.log('error', 'ws', `Reconnect failed: ${err.message}`));
+      }, delay);
     }
-  }
 
-  function maybeCloseForLoss(contract) {
-    if (!settings.closeOnLoss || !currentTrade || currentTrade.closeRequested) return;
-    const cp = toNum(contract?.current_profit, 0);
-    if (cp <= -settings.closeLossTarget) {
-      currentTrade.closeRequested = true;
-      currentTrade.exitReason = 'loss guard';
-      sendWs({ sell: currentContractId, price: 0, req_id: ++reqId });
-      setMessage(`Loss guard hit: ${signedMoney(cp)}. Closing trade...`, 'warn');
+    rejectAllPending(err){
+      for (const [, entry] of this.pending.entries()){
+        clearTimeout(entry.timer);
+        entry.reject(err);
+      }
+      this.pending.clear();
     }
-  }
 
-  function reversePressure(contract) {
-    if (!currentTrade || prices.length < 5) return false;
-    const emaFast = EMA(9, prices);
-    const emaSlow = EMA(21, prices);
-    if (currentTrade.direction === 'CALL') return emaFast < emaSlow;
-    if (currentTrade.direction === 'PUT') return emaFast > emaSlow;
-    return false;
-  }
-
-  function maybeTrailInProfit(contract) {
-    if (!settings.closeOnProfit || !currentTrade || currentTrade.closeRequested) return;
-    const cp = toNum(contract?.current_profit, 0);
-    if (cp > settings.closeProfitTarget * 0.6 && reversePressure(contract)) {
-      currentTrade.closeRequested = true;
-      currentTrade.exitReason = 'trend reversal';
-      sendWs({ sell: currentContractId, price: 0, req_id: ++reqId });
-      setMessage(`Trend reversed while in profit. Closing trade: ${signedMoney(cp)}`, 'warn');
+    disconnect(){
+      this.autoReconnect = false;
+      this.token = '';
+      if (this.ws) {
+        try { this.ws.close(); } catch {}
+      }
+      this.connected = false;
+      this.authorized = false;
+      this.rejectAllPending(new Error('Disconnected'));
     }
-  }
 
-  function handleOpenContract(contract) {
-    if (!contract || String(contract.contract_id) !== String(currentContractId)) return;
-    liveOpenProfit = toNum(contract.current_profit ?? contract.profit, 0);
-    if (currentTrade) currentTrade.openProfit = liveOpenProfit;
-    ui.openProfit.textContent = signedMoney(liveOpenProfit);
-    ui.openProfit.style.color = liveOpenProfit >= 0 ? '#4ade80' : '#f87171';
+    send(payload){
+      if (!this.ws || this.ws.readyState !== 1) throw new Error('WebSocket is not open');
+      this.ws.send(JSON.stringify(payload));
+    }
 
-    maybeCloseForProfit(contract);
-    maybeCloseForLoss(contract);
-    maybeTrailInProfit(contract);
-
-    if (contract.is_sold) finalizeTrade(contract);
-    updateUI();
-  }
-
-  function adjustStakeAfterTrade(won) {
-    const balanceCap = currentBalance ? currentBalance * (settings.maxExposurePct / 100) : settings.maxStake;
-    if (settings.martingaleEnabled) {
-      if (won) {
-        currentStake = settings.stake;
-        metrics.martingaleStep = 0;
-      } else {
-        if (metrics.martingaleStep < settings.martingaleSteps) {
-          currentStake = clamp(currentStake * settings.martingaleMultiplier, settings.stake, Math.min(settings.maxStake, balanceCap || settings.maxStake));
-          metrics.martingaleStep += 1;
-        } else {
-          currentStake = settings.stake;
-          metrics.martingaleStep = 0;
+    request(payload, timeout = 15000){
+      const req_id = this.reqId++;
+      const body = {...payload, req_id};
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          this.pending.delete(req_id);
+          reject(new Error('Request timed out'));
+        }, timeout);
+        this.pending.set(req_id, {resolve, reject, timer});
+        try { this.send(body); }
+        catch (err) {
+          clearTimeout(timer);
+          this.pending.delete(req_id);
+          reject(err);
         }
+      });
+    }
+
+    handleMessage(raw){
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+      this.emit('message', msg);
+      const rid = msg.req_id;
+      if (rid && this.pending.has(rid)){
+        const entry = this.pending.get(rid);
+        clearTimeout(entry.timer);
+        this.pending.delete(rid);
+        if (msg.error) entry.reject(new Error(msg.error.message || 'Request failed'));
+        else entry.resolve(msg);
       }
-    } else {
-      currentStake = settings.stake;
-      metrics.martingaleStep = 0;
+      switch (msg.msg_type) {
+        case 'authorize':
+          this.authorized = true;
+          this.wasAuthorized = true;
+          this.app.onAuthorized(msg.authorize || {});
+          break;
+        case 'balance':
+          this.app.onBalance(msg.balance || msg);
+          break;
+        case 'tick':
+          this.app.onTick(msg.tick || msg);
+          break;
+        case 'proposal_open_contract':
+          this.app.onOpenContract(msg.proposal_open_contract || msg);
+          break;
+        case 'history':
+          this.app.onHistory(msg.history || msg);
+          break;
+        case 'candles':
+          this.app.onHistory(msg);
+          break;
+        case 'buy':
+          this.app.onBuy(msg.buy || msg);
+          break;
+        case 'proposal':
+          this.app.onProposal(msg.proposal || msg);
+          break;
+        case 'error':
+          this.app.log('error', 'api', msg.error?.message || 'API error', msg.error || msg);
+          break;
+      }
     }
 
-    const recent = optimiserHistory.slice(-Math.max(6, optimiser.windowSize));
-    const winRate = recent.length ? recent.filter((x) => x > 0).length / recent.length : 0.5;
-    let factor = 1;
-    if (metrics.lossStreak >= 2) factor *= 0.7;
-    if (winRate < 0.45) factor *= 0.85;
-    if (winRate > 0.6) factor *= 1.05;
-    currentStake = clamp(currentStake * factor, 0.1, Math.min(settings.maxStake, balanceCap || settings.maxStake));
+    authorize(token){
+      this.token = token;
+      return this.request({authorize: token});
+    }
+    balance(){
+      return this.request({balance: 1});
+    }
+    ticksHistory(symbol, count = 250, granularity = 60){
+      return this.request({
+        ticks_history: symbol,
+        style: 'candles',
+        granularity,
+        count,
+        end: 'latest',
+        adjust_start_time: 1
+      });
+    }
+    subscribeTicks(symbol){
+      return this.request({ticks: symbol, subscribe: 1});
+    }
+    subscribeBalance(){
+      return this.request({balance: 1, subscribe: 1});
+    }
+    subscribeOpenContract(contract_id){
+      return this.request({proposal_open_contract: 1, contract_id, subscribe: 1});
+    }
+    proposal(params){
+      return this.request({proposal: 1, ...params});
+    }
+    buy(proposal_id, price){
+      return this.request({buy: proposal_id, price});
+    }
+    sell(contract_id, price){
+      const payload = {sell: contract_id};
+      if (Number.isFinite(price)) payload.price = price;
+      return this.request(payload);
+    }
   }
 
-  function finalizeTrade(contract) {
-    const profit = toNum(contract?.profit ?? contract?.current_profit, 0);
-    const won = profit > 0;
-    const direction = currentTrade?.direction || contract?.contract_type || 'CALL';
-    const patternKey = currentTrade?.pattern || getPatternKey();
-    const stake = toNum(currentTrade?.stake, settings.stake);
-    const confidence = toNum(currentTrade?.confidence, metrics.lastConfidence);
-
-    metrics.trades += 1;
-    if (won) metrics.wins += 1;
-    metrics.profit += profit;
-    metrics.sessionPnL += profit;
-    metrics.sessionLoss = Math.max(0, -metrics.sessionPnL);
-    metrics.lossStreak = won ? 0 : metrics.lossStreak + 1;
-    metrics.lastConfidence = confidence;
-
-    optimiserHistory.push(profit);
-    if (optimiserHistory.length > 40) optimiserHistory.shift();
-
-    const pat = ensurePattern(patternKey);
-    if (won) pat[direction].wins += 1;
-    else pat[direction].losses += 1;
-
-    if (won) beep('win'); else beep('loss');
-
-    tradeHistory.unshift({
-      time: new Date().toLocaleTimeString(),
-      direction,
-      stake,
-      confidence,
-      openProfit: toNum(currentTrade?.openProfit, 0),
-      pattern: patternKey,
-      exitReason: currentTrade?.exitReason || 'closed',
-      result: won ? 'WIN' : 'LOSS',
-      profit
-    });
-    if (tradeHistory.length > 20) tradeHistory.length = 20;
-
-    tradeMarkers.push({ index: currentTrade?.entryIndex ?? Math.max(0, prices.length - 1), result: won ? 'WIN' : 'LOSS' });
-    if (tradeMarkers.length > 20) tradeMarkers.shift();
-
-    adjustStakeAfterTrade(won);
-    autoTuneOptimiser();
-
-    if (metrics.lossStreak >= settings.maxLossStreak) {
-      setCooldown(`Loss streak reached ${settings.maxLossStreak}. Pausing for safety.`, 60000);
-    } else if (metrics.sessionLoss >= settings.sessionLossLimit) {
-      metrics.mode = 'STOPPED';
-      isRunning = false;
-      setMessage('Session loss limit reached. Bot stopped.', 'error');
-      setChip('Stopped', 'error');
-    } else {
-      metrics.mode = isRunning ? 'NORMAL' : 'STOPPED';
-      setMessage(`${won ? 'Profit' : 'Loss'} closed: ${signedMoney(profit)}.`, won ? 'success' : 'warn');
+  class MarketDataBuffer {
+    constructor(){
+      this.reset();
+      this.maxTicks = 3000;
+      this.maxCandles = 800;
     }
+    reset(){
+      this.ticks = [];
+      this.candles = [];
+      this.currentCandle = null;
+      this.lastPrice = null;
+      this.lastTickTs = null;
+      this.tickCount = 0;
+      this.candleCount = 0;
+      this.stale = true;
+    }
+    ingestTick(tick){
+      const epoch = toNum(tick.epoch || tick.epoch_ms || tick.time || Date.now()/1000);
+      const ts = epoch > 1e12 ? epoch : epoch * 1000;
+      const price = toNum(tick.quote ?? tick.price ?? tick.value);
+      if (!Number.isFinite(price)) return { closedCandle: null, currentCandle: this.currentCandle };
+      this.lastPrice = price;
+      this.lastTickTs = ts;
+      this.tickCount++;
+      this.stale = false;
+      this.ticks.push({ time: ts, price });
+      if (this.ticks.length > this.maxTicks) this.ticks.shift();
 
-    liveOpenProfit = 0;
-    isTradeOpen = false;
-    awaitingProposal = false;
-    currentContractId = null;
-    currentTrade = null;
-    lastSignal = null;
-    saveState();
-    updateUI();
+      const bucket = Math.floor(ts / 60000) * 60000;
+      let closedCandle = null;
+      if (!this.currentCandle || this.currentCandle.time !== bucket) {
+        if (this.currentCandle) {
+          this.currentCandle.complete = true;
+          closedCandle = {...this.currentCandle};
+          this.candles.push(closedCandle);
+          this.candleCount++;
+          if (this.candles.length > this.maxCandles) this.candles.shift();
+        }
+        this.currentCandle = { time: bucket, open: price, high: price, low: price, close: price, volume: 1, complete: false };
+      } else {
+        this.currentCandle.high = Math.max(this.currentCandle.high, price);
+        this.currentCandle.low = Math.min(this.currentCandle.low, price);
+        this.currentCandle.close = price;
+        this.currentCandle.volume = (this.currentCandle.volume || 0) + 1;
+      }
+      return { closedCandle, currentCandle: this.currentCandle };
+    }
+    ingestHistoryCandles(list){
+      if (!Array.isArray(list) || !list.length) return;
+      this.candles = list.map(c => ({
+        time: toNum(c.time, 0) > 1e12 ? toNum(c.time) : toNum(c.time) * 1000,
+        open: toNum(c.open),
+        high: toNum(c.high),
+        low: toNum(c.low),
+        close: toNum(c.close),
+        volume: toNum(c.volume, 0),
+        complete: true
+      })).filter(c => Number.isFinite(c.close));
+      if (this.candles.length > this.maxCandles) this.candles = this.candles.slice(-this.maxCandles);
+      this.candleCount = this.candles.length;
+      const last = this.candles[this.candles.length - 1];
+      if (last) {
+        this.currentCandle = { ...last, complete: false };
+        this.lastPrice = last.close;
+      }
+    }
+    candlesRecent(n){ return this.candles.slice(-n); }
+    ticksRecent(n){ return this.ticks.slice(-n); }
+    isHealthy(maxAgeMs = 120000){
+      if (!this.lastTickTs) return false;
+      return Date.now() - this.lastTickTs < maxAgeMs && Number.isFinite(this.lastPrice);
+    }
+    warmupOk(minCandles, minTicks){
+      return this.candles.length >= minCandles && this.ticks.length >= minTicks;
+    }
+    currentPrice(){ return this.lastPrice; }
   }
 
-  function runBot() {
-    updateModeTransition();
-    if (!isRunning || !isConnected) return;
-    if (metrics.mode === 'STOPPED' || metrics.mode === 'COOLDOWN') return;
-    if (isTradeOpen || awaitingProposal) return;
-    if (Date.now() - lastTradeAt < settings.cooldownMs) return;
-    if (metrics.sessionLoss >= settings.sessionLossLimit) {
-      metrics.mode = 'STOPPED';
-      isRunning = false;
-      setMessage('Session loss limit reached.', 'error');
-      updateUI();
-      return;
+  class IndicatorEngine {
+    sma(values, period){
+      if (values.length < period) return null;
+      const slice = values.slice(-period);
+      return slice.reduce((a,b)=>a+b,0) / period;
+    }
+    ema(values, period){
+      if (values.length < period) return null;
+      const k = 2 / (period + 1);
+      let e = values.slice(0, period).reduce((a,b)=>a+b,0) / period;
+      for (let i = period; i < values.length; i++) e = values[i] * k + e * (1 - k);
+      return e;
+    }
+    rsi(values, period){
+      if (values.length < period + 1) return null;
+      let gain = 0, loss = 0;
+      for (let i = values.length - period; i < values.length; i++) {
+        const diff = values[i] - values[i-1];
+        if (diff >= 0) gain += diff; else loss -= diff;
+      }
+      const rs = loss === 0 ? 100 : gain / loss;
+      return 100 - (100 / (1 + rs));
+    }
+    macd(values, fast, slow, signal){
+      if (values.length < slow + signal + 5) return null;
+      const kf = 2 / (fast + 1), ks = 2 / (slow + 1), sig = 2 / (signal + 1);
+      const macdSeries = [];
+      let ef = values.slice(0, fast).reduce((a,b)=>a+b,0) / fast;
+      let es = values.slice(0, slow).reduce((a,b)=>a+b,0) / slow;
+      for (let i = 0; i < values.length; i++) {
+        const p = values[i];
+        if (i >= fast) ef = p * kf + ef * (1 - kf);
+        if (i >= slow) es = p * ks + es * (1 - ks);
+        if (i >= slow - 1) macdSeries.push(ef - es);
+      }
+      if (macdSeries.length < signal) return null;
+      let sigLine = macdSeries.slice(0, signal).reduce((a,b)=>a+b,0) / signal;
+      for (let i = signal; i < macdSeries.length; i++) sigLine = macdSeries[i] * sig + sigLine * (1 - sig);
+      const hist = macdSeries[macdSeries.length - 1] - sigLine;
+      return { macd: macdSeries[macdSeries.length - 1], signal: sigLine, hist };
+    }
+    bollinger(values, period, mult){
+      if (values.length < period) return null;
+      const slice = values.slice(-period);
+      const mean = slice.reduce((a,b)=>a+b,0) / period;
+      const variance = slice.reduce((a,b)=>a + Math.pow(b-mean,2), 0) / period;
+      const sd = Math.sqrt(variance);
+      return { mid: mean, upper: mean + sd*mult, lower: mean - sd*mult, width: (sd*mult*2) / mean * 100 };
+    }
+    atr(candles, period){
+      if (candles.length < period + 1) return null;
+      const trs = [];
+      for (let i = candles.length - period; i < candles.length; i++) {
+        const cur = candles[i], prev = candles[i-1];
+        if (!cur || !prev) continue;
+        const tr = Math.max(
+          cur.high - cur.low,
+          Math.abs(cur.high - prev.close),
+          Math.abs(cur.low - prev.close)
+        );
+        trs.push(tr);
+      }
+      if (!trs.length) return null;
+      return trs.reduce((a,b)=>a+b,0) / trs.length;
+    }
+    adx(candles, period){
+      if (candles.length < period * 2 + 2) return null;
+      let trSum = 0, plusDM = 0, minusDM = 0;
+      for (let i = candles.length - period; i < candles.length; i++) {
+        const cur = candles[i], prev = candles[i-1];
+        if (!cur || !prev) continue;
+        const upMove = cur.high - prev.high;
+        const downMove = prev.low - cur.low;
+        const pdm = upMove > downMove && upMove > 0 ? upMove : 0;
+        const mdm = downMove > upMove && downMove > 0 ? downMove : 0;
+        const tr = Math.max(
+          cur.high - cur.low,
+          Math.abs(cur.high - prev.close),
+          Math.abs(cur.low - prev.close)
+        );
+        trSum += tr;
+        plusDM += pdm;
+        minusDM += mdm;
+      }
+      const pdi = trSum === 0 ? 0 : 100 * (plusDM / trSum);
+      const mdi = trSum === 0 ? 0 : 100 * (minusDM / trSum);
+      const dx = (pdi + mdi) === 0 ? 0 : 100 * Math.abs(pdi - mdi) / (pdi + mdi);
+      const adx = clamp(dx, 0, 100);
+      return { adx, pdi, mdi };
+    }
+    momentum(values, lookback){
+      if (values.length < lookback + 1) return null;
+      const now = values[values.length - 1];
+      const prev = values[values.length - 1 - lookback];
+      return now - prev;
+    }
+    analyze(candles, cfg){
+      const closes = candles.map(c => c.close).filter(v => Number.isFinite(v));
+      const latest = closes[closes.length - 1];
+      const emaFast = this.ema(closes, cfg.emaFast);
+      const emaSlow = this.ema(closes, cfg.emaSlow);
+      const rsi = this.rsi(closes, cfg.rsiPeriod);
+      const macd = this.macd(closes, cfg.macdFast, cfg.macdSlow, cfg.macdSignal);
+      const bb = this.bollinger(closes, cfg.bbPeriod, cfg.bbStd);
+      const atr = this.atr(candles, cfg.atrPeriod);
+      const adx = this.adx(candles, cfg.adxPeriod);
+      const mom = this.momentum(closes, cfg.momLookback);
+      const ready = [emaFast, emaSlow, rsi, macd, bb, atr, adx, mom].every(v => v !== null && v !== undefined);
+      return { latest, emaFast, emaSlow, rsi, macd, bb, atr, adx, mom, ready, closes };
+    }
+  }
+
+  class RegimeClassifier {
+    classify(a, cfg){
+      if (!a.ready) return { regime:'no-trade', confidence:0, reason:'Indicators not warmed up yet.', noise:true };
+      const price = a.latest || 1;
+      const atrPct = (a.atr / price) * 100;
+      const emaSpreadPct = Math.abs((a.emaFast - a.emaSlow) / price) * 100;
+      const adx = a.adx?.adx ?? 0;
+      const bbWidth = a.bb?.width ?? 0;
+      const rsi = a.rsi ?? 50;
+      const trendScore = (adx / 100) * 1.2 + (emaSpreadPct / 0.20) + (a.macd ? Math.sign(a.macd.hist) * Math.min(Math.abs(a.macd.hist) / price * 1000, 0.6) : 0);
+      const chopScore = (1 - clamp((adx - 10) / 30, 0, 1)) + clamp((2.4 - bbWidth) / 2.4, 0, 1) + (1 - Math.abs(rsi - 50) / 50) * 0.4;
+      const noise = atrPct > cfg.noiseAtrPct || (adx < 12 && bbWidth > 2.8);
+      if (noise) return { regime:'no-trade', confidence:clamp(20 - atrPct * 3, 0, 25), reason:`High noise or volatility expansion (ATR ${fmtPct(atrPct)}; ADX ${fmtNum(adx,1)}).`, noise:true };
+      if (adx >= cfg.trendAdx && emaSpreadPct > 0.015) {
+        return { regime:'trend', confidence:clamp(55 + trendScore * 18, 30, 95), reason:`Trend structure detected (ADX ${fmtNum(adx,1)}, EMA spread ${fmtPct(emaSpreadPct)}).`, noise:false };
+      }
+      if (adx <= cfg.chopAdx && bbWidth < 2.2) {
+        return { regime:'chop', confidence:clamp(52 + chopScore * 18, 30, 90), reason:`Mean-reversion / chop regime (ADX ${fmtNum(adx,1)}, BB width ${fmtNum(bbWidth,2)}%).`, noise:false };
+      }
+      return { regime:'no-trade', confidence:clamp(40 + Math.max(0, 15 - Math.abs(adx - 20)) , 20, 60), reason:`Mixed regime; no strong edge. ADX ${fmtNum(adx,1)}, BB width ${fmtNum(bbWidth,2)}%.`, noise:false };
+    }
+  }
+
+  class AdaptiveWeightEngine {
+    constructor(){
+      this.weights = deepClone(baseWeights);
+      this.stats = {
+        trend: { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 },
+        chop:  { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 },
+        none:  { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 }
+      };
+      this.lastWeights = deepClone(this.weights);
+    }
+    normalize(row){
+      const sum = Object.values(row).reduce((a,b)=>a + Math.max(0.0001, b), 0);
+      const out = {};
+      for (const [k, v] of Object.entries(row)) out[k] = Math.max(0.0001, v) / sum;
+      return out;
+    }
+    get(regime){
+      return this.weights[regime] || this.weights.none;
+    }
+    update({regime, signal, profit, confidence, cfg}){
+      if (!regime || !this.weights[regime]) return;
+      const row = this.weights[regime];
+      const stats = this.stats[regime];
+      stats.samples++;
+      const won = profit > 0;
+      stats.winEma = stats.winEma * 0.94 + (won ? 1 : 0) * 0.06;
+      stats.pnlEma = stats.pnlEma * 0.94 + profit * 0.06;
+      stats.totalPnl += profit;
+      if (stats.samples < cfg.minSamples) return;
+
+      const lr = cfg.learningRate * clamp(confidence / 100, 0.35, 1);
+      const reward = clamp(profit / Math.max(0.01, Math.abs(profit) + 1), -1, 1);
+      const decay = cfg.weightDecay;
+      for (const key of Object.keys(row)) {
+        const contrib = signal?.contributions?.[key] ?? 0;
+        const base = baseWeights[regime][key];
+        const drift = row[key] - base;
+        const nudged = row[key] + (lr * reward * contrib * 0.25) - (drift * decay);
+        const min = base - cfg.maxDrift;
+        const max = base + cfg.maxDrift;
+        row[key] = clamp(nudged, Math.max(0.03, min), max);
+      }
+      this.weights[regime] = this.normalize(row);
+    }
+    snapshot(){
+      return { weights: deepClone(this.weights), stats: deepClone(this.stats) };
+    }
+    reset(){
+      this.weights = deepClone(baseWeights);
+      this.stats = {
+        trend: { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 },
+        chop:  { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 },
+        none:  { samples: 0, winEma: 0.5, pnlEma: 0, totalPnl: 0 }
+      };
+    }
+  }
+
+  class SignalEngine {
+    constructor(indicatorEngine, regimeClassifier, adaptive){
+      this.ind = indicatorEngine;
+      this.regime = regimeClassifier;
+      this.adaptive = adaptive;
     }
 
-    const signal = evaluateSignal();
-    lastSignal = signal;
-    ui.signalLabel.textContent = signal ? `${signal.direction} • ${(signal.confidence * 100).toFixed(0)}%` : 'Waiting';
-    ui.aiConfidence.textContent = signal ? `${(signal.confidence * 100).toFixed(0)}%` : `${(metrics.lastConfidence * 100).toFixed(0)}%`;
+    evaluate(candles, cfg){
+      const a = this.ind.analyze(candles, cfg);
+      const regimeInfo = this.regime.classify(a, cfg);
+      const signal = {
+        ready: a.ready,
+        regime: regimeInfo.regime,
+        regimeReason: regimeInfo.reason,
+        confidence: 0,
+        bias: 'NONE',
+        score: 0,
+        contributions: {},
+        gates: {},
+        explanation: [],
+        a
+      };
+      if (!a.ready) return signal;
+      if (regimeInfo.regime === 'no-trade') {
+        signal.confidence = regimeInfo.confidence;
+        signal.explanation.push({name:'Regime', value:'NO-TRADE', detail:regimeInfo.reason});
+        return signal;
+      }
 
-    if (!signal) return;
+      const price = a.latest || 1;
+      const weights = this.adaptive.get(regimeInfo.regime);
 
-    if (settings.confirmTrades) {
-      const ok = confirm(
-        `Place ${signal.direction} trade?\n` +
-        `Stake: ${money(currentStake)}\n` +
-        `Confidence: ${(signal.confidence * 100).toFixed(0)}%\n` +
-        `RSI: ${signal.rsi.toFixed(1)}\n` +
-        `Profit close target: ${money(settings.closeProfitTarget)}`
-      );
-      if (!ok) {
-        setMessage('Trade cancelled by user.', 'warn');
+      const emaScore = a.emaFast && a.emaSlow ? clamp(((a.emaFast - a.emaSlow) / price) * 900, -1, 1) : 0;
+      const rsiScore = a.rsi != null ? clamp((50 - a.rsi) / 15, -1, 1) : 0;
+      const macdScore = a.macd ? clamp(a.macd.hist / price * 1200, -1, 1) : 0;
+      const bbScore = a.bb ? (() => {
+        if (price < a.bb.lower) return 1;
+        if (price > a.bb.upper) return -1;
+        const fromMid = (a.bb.mid - price) / Math.max(1e-9, (a.bb.upper - a.bb.lower) / 2);
+        return clamp(fromMid, -1, 1);
+      })() : 0;
+      const adxTrend = a.adx ? clamp((a.adx.adx - cfg.trendAdx) / 20, 0, 1) : 0;
+      const adxDir = a.adx ? clamp((a.adx.pdi - a.adx.mdi) / 40, -1, 1) : 0;
+      const adxScore = adxTrend * adxDir;
+      const momScore = a.mom != null ? clamp((a.mom / price) * 1000, -1, 1) : 0;
+
+      signal.contributions = {
+        ema: emaScore * weights.ema,
+        rsi: rsiScore * weights.rsi,
+        macd: macdScore * weights.macd,
+        bb: bbScore * weights.bb,
+        adx: adxScore * weights.adx,
+        mom: momScore * weights.mom
+      };
+
+      const raw = Object.values(signal.contributions).reduce((a,b)=>a+b,0);
+      const confidenceBase = Math.abs(raw) * 100;
+      const regimeBoost = regimeInfo.regime === 'trend' ? 1.08 : 1.0;
+      const confidence = clamp(confidenceBase * regimeBoost, 0, 100);
+
+      signal.score = raw;
+      signal.confidence = confidence;
+      signal.bias = raw >= 0 ? 'CALL' : 'PUT';
+      signal.explanation.push({name:'Regime', value:regimeInfo.regime.toUpperCase(), detail:regimeInfo.reason});
+      signal.explanation.push({name:'EMA', value:fmtNum(signal.contributions.ema, 3), detail:`Fast ${fmtNum(a.emaFast,4)} vs slow ${fmtNum(a.emaSlow,4)}`});
+      signal.explanation.push({name:'RSI', value:fmtNum(signal.contributions.rsi, 3), detail:`RSI ${fmtNum(a.rsi,2)}`});
+      signal.explanation.push({name:'MACD', value:fmtNum(signal.contributions.macd, 3), detail:`Hist ${fmtNum(a.macd?.hist,6)}`});
+      signal.explanation.push({name:'Bollinger', value:fmtNum(signal.contributions.bb, 3), detail:`Band width ${fmtPct(a.bb?.width ?? 0)}`});
+      signal.explanation.push({name:'ADX', value:fmtNum(signal.contributions.adx, 3), detail:`ADX ${fmtNum(a.adx?.adx,2)} / PDI ${fmtNum(a.adx?.pdi,2)} / MDI ${fmtNum(a.adx?.mdi,2)}`});
+      signal.explanation.push({name:'Momentum', value:fmtNum(signal.contributions.mom, 3), detail:`Lookback ${cfg.momLookback}`});
+      signal.explanation.push({name:'Final', value:`${signal.bias} ${fmtNum(confidence,1)}%`, detail:'Confidence is a bounded blend of normalized indicator contributions.'});
+      return signal;
+    }
+  }
+
+  class TradeJournal {
+    constructor(){
+      this.trades = [];
+      this.limit = 500;
+    }
+    addOpen(trade){
+      const row = {
+        id: trade.localId,
+        contractId: trade.contractId || null,
+        mode: trade.mode,
+        shadow: !!trade.shadow,
+        direction: trade.direction,
+        regime: trade.regime,
+        setup: trade.setup || '',
+        stake: trade.stake || 0,
+        entryPrice: trade.entryPrice || 0,
+        exitPrice: null,
+        pnl: 0,
+        status: 'open',
+        note: trade.note || '',
+        openedAt: trade.openedAt || Date.now(),
+        closedAt: null,
+        signal: deepClone(trade.signal || null),
+        openProfit: 0,
+        bestProfit: 0,
+        canSell: false,
+        sellReason: 'Awaiting contract state'
+      };
+      this.trades.unshift(row);
+      if (this.trades.length > this.limit) this.trades.pop();
+      return row;
+    }
+    updateOpen(id, patch){
+      const t = this.trades.find(x => x.id === id);
+      if (!t) return;
+      Object.assign(t, patch);
+    }
+    close(id, patch){
+      const t = this.trades.find(x => x.id === id);
+      if (!t) return null;
+      Object.assign(t, patch, { status: 'closed', closedAt: patch.closedAt || Date.now() });
+      return t;
+    }
+    openTrade(){ return this.trades.find(t => t.status === 'open'); }
+
+    closed(){
+      return this.trades.filter(t => t.status === 'closed');
+    }
+
+    summary(){
+      const closed = this.closed();
+      const total = closed.length;
+      let wins = 0, losses = 0, grossWin = 0, grossLoss = 0, net = 0;
+      const equity = [0];
+      let peak = 0, maxDD = 0;
+      for (const t of closed) {
+        const p = toNum(t.pnl, 0);
+        net += p;
+        if (p > 0) { wins++; grossWin += p; }
+        else if (p < 0) { losses++; grossLoss += Math.abs(p); }
+        equity.push(net);
+        peak = Math.max(peak, net);
+        maxDD = Math.max(maxDD, peak - net);
+      }
+      const winRate = total ? (wins / total) * 100 : 0;
+      const pf = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : 0);
+      const avgWin = wins ? grossWin / wins : 0;
+      const avgLoss = losses ? grossLoss / losses : 0;
+      const expectancy = total ? net / total : 0;
+      return { total, wins, losses, winRate, grossWin, grossLoss, net, pf, avgWin, avgLoss, expectancy, maxDD, equity };
+    }
+
+    rolling(n){
+      const closed = this.closed().slice(-n);
+      let wins = 0, pnl = 0;
+      for (const t of closed) { pnl += toNum(t.pnl, 0); if (toNum(t.pnl,0) > 0) wins++; }
+      return { n: closed.length, winRate: closed.length ? (wins/closed.length)*100 : 0, pnl };
+    }
+
+    regimeStats(){
+      const map = {};
+      for (const t of this.closed()) {
+        const k = t.regime || 'none';
+        if (!map[k]) map[k] = { trades:0, wins:0, pnl:0 };
+        map[k].trades++;
+        if (t.pnl > 0) map[k].wins++;
+        map[k].pnl += toNum(t.pnl,0);
+      }
+      return map;
+    }
+
+    setupStats(){
+      const map = {};
+      for (const t of this.closed()) {
+        const k = t.setup || `${t.regime || 'none'}:${t.direction || '?'}`;
+        if (!map[k]) map[k] = { trades:0, wins:0, pnl:0 };
+        map[k].trades++;
+        if (t.pnl > 0) map[k].wins++;
+        map[k].pnl += toNum(t.pnl,0);
+      }
+      return map;
+    }
+  }
+
+  class RiskEngine {
+    constructor(app){
+      this.app = app;
+      this.session = {};
+      this.resetSession(true);
+    }
+
+    resetSession(initial = false){
+      const bal = this.app.state.account.balance || (initial ? 1000 : 0);
+      this.session = {
+        startBalance: bal,
+        peakEquity: bal,
+        realizedPnL: 0,
+        tradeCount: 0,
+        wins: 0,
+        losses: 0,
+        consecutiveLosses: 0,
+        lockout: false,
+        lockoutReason: '',
+        nextTradeAt: 0,
+        currentDay: this.dayKey(),
+        maxDrawdown: 0,
+        lastTradeAt: 0,
+      };
+      this.app.state.risk.lockout = false;
+      this.app.state.risk.lockoutReason = '';
+      this.app.state.risk.nextTradeAt = 0;
+      this.app.state.risk.consecutiveLosses = 0;
+      this.app.state.risk.tradeCount = 0;
+      this.app.log('info', 'risk', 'Session reset');
+    }
+
+    dayKey(){
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    }
+
+    maybeResetDay(){
+      const dk = this.dayKey();
+      if (dk !== this.session.currentDay) this.resetSession(false);
+      this.session.currentDay = dk;
+    }
+
+    equityNow(){
+      const balance = this.app.state.account.balance || this.session.startBalance;
+      const openPnl = this.app.state.trade.active ? toNum(this.app.state.trade.active.currentProfit, 0) : 0;
+      return balance + openPnl;
+    }
+
+    currentStake(){
+      const r = this.app.state.settings.risk;
+      const balance = this.app.state.account.balance || this.session.startBalance || 1000;
+      let stake = r.stakeMode === 'pct' ? (balance * r.stakePct / 100) : r.fixedStake;
+      if (r.martingale && this.app.state.trade.lastLossStake > 0) {
+        const mult = Math.pow(r.martFactor, clamp(this.session.consecutiveLosses, 0, r.martSteps));
+        stake = r.fixedStake * mult;
+      }
+      stake = clamp(stake, 0, r.maxStake);
+      return Math.max(0.35, Number(stake.toFixed(2)));
+    }
+
+    timeWindowOk(){
+      const {timeFrom, timeTo} = this.app.state.settings.risk;
+      const now = new Date();
+      const m = now.getHours() * 60 + now.getMinutes();
+      const [fh, fm] = timeFrom.split(':').map(n=>parseInt(n,10));
+      const [th, tm] = timeTo.split(':').map(n=>parseInt(n,10));
+      const from = fh * 60 + fm;
+      const to = th * 60 + tm;
+      if (from === to) return true;
+      if (from < to) return m >= from && m <= to;
+      return m >= from || m <= to;
+    }
+
+    evaluate(context){
+      this.maybeResetDay();
+      const s = this.app.state.settings.risk;
+      const c = context;
+      const gates = [];
+      const add = (key, label, pass, reason) => gates.push({key, label, pass, reason});
+
+      add('connected', 'WebSocket connected', c.connected, c.connected ? 'Connected' : 'No active WebSocket');
+      add('authorized', 'Authorized', c.authorized, c.authorized ? 'Token authorized' : 'No authorization yet');
+      add('warmed', 'Data warmed up', c.warmedUp, c.warmedUp ? `Candles ${this.app.buffer.candles.length} / Ticks ${this.app.buffer.ticks.length}` : 'Need more buffered market data');
+      add('symbol', 'Symbol healthy', c.symbolHealthy, c.symbolHealthy ? 'Recent price stream healthy' : 'No recent tick or price missing');
+      add('indicators', 'Indicators ready', c.indicatorsReady, c.indicatorsReady ? 'All required indicators available' : 'Indicator stack not ready');
+      add('cooldown', 'Cooldown elapsed', Date.now() >= this.session.nextTradeAt, Date.now() >= this.session.nextTradeAt ? 'Cooldown satisfied' : `Wait ${Math.ceil((this.session.nextTradeAt - Date.now())/1000)}s`);
+      add('dailyCap', 'Daily cap not exceeded', this.session.tradeCount < s.dailyCap, `${this.session.tradeCount}/${s.dailyCap} trades used`);
+      add('lossCap', 'Consecutive loss cap not exceeded', this.session.consecutiveLosses < s.maxLosses, `${this.session.consecutiveLosses}/${s.maxLosses} consecutive losses`);
+      const ddPct = this.drawdownPct();
+      add('drawdown', 'Drawdown cap not exceeded', ddPct < s.maxDrawdown, `${fmtPct(ddPct)} drawdown / cap ${fmtPct(s.maxDrawdown)}`);
+      add('profitTarget', 'Daily profit target not reached', this.session.realizedPnL < s.dailyProfit, `Realized ${fmtMoney(this.session.realizedPnL, this.app.state.settings.currency)} / target ${fmtMoney(s.dailyProfit, this.app.state.settings.currency)}`);
+      add('dailyLoss', 'Daily loss limit not reached', Math.abs(Math.min(0, this.session.realizedPnL)) < s.dailyLoss, `Realized ${fmtMoney(this.session.realizedPnL, this.app.state.settings.currency)} / loss limit ${fmtMoney(s.dailyLoss, this.app.state.settings.currency)}`);
+      add('timeWindow', 'Time window allowed', this.timeWindowOk(), this.timeWindowOk() ? 'Within allowed window' : `Outside ${s.timeFrom}–${s.timeTo}`);
+      add('regime', 'Regime is tradable', c.signal?.regime !== 'no-trade', c.signal?.regime === 'no-trade' ? (c.signal?.regimeReason || 'No-trade regime') : `Regime ${c.signal?.regime}`);
+      add('confidence', 'Confidence threshold met', (c.signal?.confidence || 0) >= s.confidenceThreshold, `${fmtNum(c.signal?.confidence || 0,1)}% / threshold ${s.confidenceThreshold}%`);
+      add('openTrade', 'No blocking open trade', (!c.openTrade || s.allowConcurrent), (!c.openTrade ? 'No open trade' : (s.allowConcurrent ? 'Concurrent trades allowed' : 'Open trade blocks new entry')));
+      add('armed', 'Live mode armed', c.mode !== 'live' || s.liveArmed, c.mode !== 'live' ? 'Demo mode does not require live arm' : (s.liveArmed ? 'Live armed' : 'Live trading is disarmed'));
+      add('lockout', 'No lockout', !this.session.lockout, this.session.lockout ? this.session.lockoutReason : 'No lockout');
+
+      const allowed = gates.every(g => g.pass);
+      return {
+        allowed,
+        gates,
+        ddPct,
+        lockout: this.session.lockout,
+        lockoutReason: this.session.lockoutReason
+      };
+    }
+
+    drawdownPct(){
+      const peak = Math.max(this.session.peakEquity, this.session.startBalance || 1);
+      const eq = this.equityNow();
+      return peak > 0 ? ((peak - eq) / peak) * 100 : 0;
+    }
+
+    updateAfterClose(trade){
+      this.maybeResetDay();
+      const pnl = toNum(trade.pnl, 0);
+      this.session.tradeCount++;
+      this.session.realizedPnL += pnl;
+      this.session.lastTradeAt = Date.now();
+      const eq = (this.app.state.account.balance || this.session.startBalance) + this.session.realizedPnL;
+      this.session.peakEquity = Math.max(this.session.peakEquity, eq);
+      const dd = this.drawdownPct();
+      this.session.maxDrawdown = Math.max(this.session.maxDrawdown, dd);
+      if (pnl > 0) {
+        this.session.wins++;
+        this.session.consecutiveLosses = 0;
+      } else if (pnl < 0) {
+        this.session.losses++;
+        this.session.consecutiveLosses++;
+        this.session.nextTradeAt = Date.now() + this.app.state.settings.risk.cooldownSec * 1000;
+      }
+
+      const s = this.app.state.settings.risk;
+      let lock = '';
+      if (this.session.realizedPnL >= s.dailyProfit) lock = `Daily profit target reached (${fmtMoney(this.session.realizedPnL, this.app.state.settings.currency)})`;
+      if (Math.abs(Math.min(0, this.session.realizedPnL)) >= s.dailyLoss) lock = `Daily loss limit reached (${fmtMoney(this.session.realizedPnL, this.app.state.settings.currency)})`;
+      if (dd >= s.maxDrawdown) lock = `Max drawdown breached (${fmtPct(dd)})`;
+      if (this.session.consecutiveLosses >= s.maxLosses) lock = `Consecutive loss limit reached (${this.session.consecutiveLosses})`;
+      if (lock) {
+        this.session.lockout = true;
+        this.session.lockoutReason = lock;
+        this.app.state.risk.lockout = true;
+        this.app.state.risk.lockoutReason = lock;
+        this.app.log('error', 'risk', lock);
+      }
+
+      this.app.state.risk.tradeCount = this.session.tradeCount;
+      this.app.state.risk.realizedPnL = this.session.realizedPnL;
+      this.app.state.risk.consecutiveLosses = this.session.consecutiveLosses;
+      this.app.state.risk.nextTradeAt = this.session.nextTradeAt;
+    }
+
+    clearLockout(){
+      this.session.lockout = false;
+      this.session.lockoutReason = '';
+      this.app.state.risk.lockout = false;
+      this.app.state.risk.lockoutReason = '';
+    }
+
+    setBalance(value){
+      if (!Number.isFinite(value)) return;
+      if (!this.session.startBalance) this.session.startBalance = value;
+      this.app.state.account.balance = value;
+      this.session.peakEquity = Math.max(this.session.peakEquity, value);
+    }
+  }
+
+  class ExecutionEngine {
+    constructor(app){
+      this.app = app;
+      this.active = null;
+      this.anomalies = 0;
+      this.lastAnomalyAt = 0;
+      this.sellAttempting = false;
+    }
+
+    reset(){
+      this.active = null;
+      this.sellAttempting = false;
+      this.anomalies = 0;
+    }
+
+    noteAnomaly(msg){
+      const now = Date.now();
+      if (now - this.lastAnomalyAt < 10 * 60 * 1000) this.anomalies++;
+      else this.anomalies = 1;
+      this.lastAnomalyAt = now;
+      this.app.log('warn', 'exec', msg);
+      if (this.anomalies >= 3) {
+        this.app.state.settings.risk.shadowMode = this.app.state.settings.risk.shadowMode; // no-op, keep state explicit
+        this.app.state.run.paused = true;
+        this.app.state.run.auto = false;
+        this.app.log('error', 'exec', 'Auto-paused after repeated execution anomalies');
+      }
+    }
+
+    canManageTrade(){
+      return !!this.active;
+    }
+
+    makeSetup(signal){
+      return `${signal.regime}:${signal.bias}:${Math.round(signal.confidence/10)*10}`;
+    }
+
+    async manual(direction){
+      return this.execute(direction, 'manual');
+    }
+
+    async autoExecute(signal){
+      if (!this.app.state.run.auto) return;
+      return this.execute(signal.bias, 'auto', signal);
+    }
+
+    async execute(direction, source = 'manual', signal = null){
+      const s = this.app.state.settings;
+      const currentSignal = signal || this.app.signalEngine.evaluate(this.app.buffer.candlesRecent(400).concat(this.app.buffer.currentCandle ? [this.app.buffer.currentCandle] : []), s.strategy);
+      const gate = this.app.risk.evaluate({
+        connected: this.app.api.connected,
+        authorized: this.app.api.authorized,
+        warmedUp: this.app.buffer.warmupOk(s.riskMinCandles, s.riskMinTicks),
+        symbolHealthy: this.app.buffer.isHealthy(),
+        indicatorsReady: currentSignal.ready,
+        openTrade: this.active,
+        mode: s.accountMode,
+        signal: currentSignal
+      });
+      this.app.state.gates = gate.gates;
+      if (!gate.allowed) {
+        const reason = gate.gates.filter(g => !g.pass).map(g => `${g.label}: ${g.reason}`).join(' | ');
+        this.app.log('warn', 'risk', `Trade blocked: ${reason}`);
+        return { ok:false, reason };
+      }
+
+      const stake = this.app.risk.currentStake();
+      const contractType = direction === 'CALL' ? 'CALL' : 'PUT';
+      const entryPrice = this.app.buffer.currentPrice();
+      const duration = this.app.state.settings.trade.durationAmount;
+      const durationUnit = this.app.state.settings.trade.durationUnit;
+      const currency = this.app.state.settings.currency || this.app.state.account.currency || 'USD';
+      const localId = `t_${Date.now()}_${Math.random().toString(16).slice(2,8)}`;
+      const setup = this.makeSetup(currentSignal);
+
+      if (this.app.state.settings.risk.shadowMode) {
+        this.app.log('info', 'exec', `Shadow trade started ${contractType} stake ${fmtMoney(stake, currency)} (${source})`);
+        const trade = this.app.journal.addOpen({
+          localId,
+          mode: this.app.state.settings.accountMode,
+          shadow: true,
+          direction: contractType,
+          regime: currentSignal.regime,
+          setup,
+          stake,
+          entryPrice,
+          openedAt: Date.now(),
+          note: `Shadow mode ${source}`,
+          signal: currentSignal
+        });
+        this.active = {
+          localId,
+          shadow: true,
+          direction: contractType,
+          regime: currentSignal.regime,
+          setup,
+          stake,
+          entryPrice,
+          openedAt: Date.now(),
+          duration,
+          durationUnit,
+          tradeId: trade.id,
+          currentProfit: 0,
+          bestProfit: 0,
+          canSell: false,
+          sellReason: 'Shadow mode'
+        };
+        this.app.state.trade.active = deepClone(this.active);
+        this.app.state.trade.lastSignal = currentSignal;
+        this.runShadowMonitor();
+        this.app.refresh();
+        return { ok:true, shadow:true };
+      }
+
+      try {
+        this.app.log('info', 'exec', `Requesting proposal ${contractType} ${fmtMoney(stake, currency)} ${duration}${durationUnit} on ${this.app.state.settings.symbol}`);
+        const proposalResp = await this.app.api.proposal({
+          symbol: this.app.state.settings.symbol,
+          amount: stake,
+          basis: 'stake',
+          contract_type: contractType,
+          currency,
+          duration,
+          duration_unit: durationUnit
+        });
+        const proposal = proposalResp.proposal || proposalResp;
+        const proposalId = proposal.id || proposal.proposal_id || proposal.proposalId;
+        const ask = toNum(proposal.ask_price ?? proposal.ask_price, stake);
+        if (!proposalId) throw new Error('Proposal did not return a proposal ID');
+        const buyResp = await this.app.api.buy(proposalId, ask);
+        const buy = buyResp.buy || buyResp;
+        const contractId = buy.contract_id || buy.contractId;
+        if (!contractId) throw new Error('Buy response did not return a contract ID');
+        const trade = this.app.journal.addOpen({
+          localId,
+          contractId,
+          mode: this.app.state.settings.accountMode,
+          shadow: false,
+          direction: contractType,
+          regime: currentSignal.regime,
+          setup,
+          stake,
+          entryPrice,
+          openedAt: Date.now(),
+          note: source,
+          signal: currentSignal
+        });
+        this.active = {
+          localId,
+          contractId,
+          shadow: false,
+          direction: contractType,
+          regime: currentSignal.regime,
+          setup,
+          stake,
+          entryPrice,
+          openedAt: Date.now(),
+          duration,
+          durationUnit,
+          proposalId,
+          buyPrice: ask,
+          currentProfit: 0,
+          bestProfit: 0,
+          canSell: false,
+          sellReason: 'Awaiting contract updates',
+          tradeId: trade.id,
+          sellAttempting: false
+        };
+        this.app.state.trade.active = deepClone(this.active);
+        this.app.state.trade.lastSignal = currentSignal;
+        this.app.log('ok', 'exec', `Bought contract ${contractId}`);
+        this.app.api.subscribeOpenContract(contractId).catch(err => this.noteAnomaly(`Open-contract subscribe failed: ${err.message}`));
+        this.app.refresh();
+        return { ok:true, contractId };
+      } catch (err) {
+        this.noteAnomaly(`Execution failed: ${err.message}`);
+        return { ok:false, reason: err.message };
+      }
+    }
+
+    runShadowMonitor(){
+      const tickWatcher = () => {
+        if (!this.active || !this.active.shadow) return;
+        this.evaluateShadow();
+        if (this.active) requestAnimationFrame(tickWatcher);
+      };
+      requestAnimationFrame(tickWatcher);
+    }
+
+    evaluateShadow(){
+      const t = this.active;
+      if (!t || !t.shadow) return;
+      const nowPrice = this.app.buffer.currentPrice();
+      if (!Number.isFinite(nowPrice)) return;
+      const pnl = t.direction === 'CALL' ? (nowPrice - t.entryPrice) : (t.entryPrice - nowPrice);
+      const normPnl = pnl;
+      t.currentProfit = normPnl;
+      t.bestProfit = Math.max(t.bestProfit || 0, normPnl);
+      this.app.journal.updateOpen(t.tradeId, { currentProfit: normPnl, bestProfit: t.bestProfit });
+      this.app.state.trade.active = deepClone(t);
+      const risk = this.app.state.settings.risk;
+      let closeReason = '';
+      if (risk.earlyClose && normPnl >= risk.fixedProfitClose) closeReason = `Shadow profit target reached (${fmtMoney(normPnl, this.app.state.settings.currency)})`;
+      const pct = t.entryPrice ? (normPnl / t.entryPrice) * 100 : 0;
+      if (!closeReason && risk.pctProfitClose > 0 && pct >= risk.pctProfitClose) closeReason = `Shadow % target reached (${fmtPct(pct)})`;
+      if (!closeReason && risk.trailStart > 0 && t.bestProfit >= risk.trailStart && normPnl <= t.bestProfit - risk.trailLock) closeReason = `Shadow trailing lock triggered (${fmtMoney(normPnl, this.app.state.settings.currency)})`;
+
+      const steps = t.durationUnit === 't' ? this.app.buffer.tickCount - (t.openTickCount || this.app.buffer.tickCount) : this.app.buffer.candleCount - (t.openCandleCount || this.app.buffer.candleCount);
+      if (!closeReason && steps >= t.duration) closeReason = 'Shadow expiry reached';
+      if (closeReason) {
+        const exitPrice = nowPrice;
+        const profit = t.direction === 'CALL' ? (exitPrice - t.entryPrice) : (t.entryPrice - exitPrice);
+        this.closeActiveTrade({
+          pnl: profit,
+          exitPrice,
+          reason: closeReason,
+          sold: true,
+          shadow: true
+        });
+      }
+    }
+
+    maybeManageLive(){
+      const t = this.active;
+      if (!t || t.shadow) return;
+      const contract = this.app.state.contract;
+      if (!contract) return;
+      const risk = this.app.state.settings.risk;
+      if (!risk.earlyClose) return;
+      const currentProfit = toNum(contract.profit ?? contract.current_spot_profit ?? 0, 0);
+      const canSell = !!(contract.is_valid_to_sell ?? contract.can_sell ?? false) && !contract.is_sold && String(contract.status || '').toLowerCase() !== 'sold';
+      const sellPrice = toNum(contract.sell_price ?? contract.sell_price, NaN);
+      t.currentProfit = currentProfit;
+      t.bestProfit = Math.max(t.bestProfit || 0, currentProfit);
+      t.canSell = canSell;
+      t.sellReason = canSell ? 'Sell available' : 'Contract not currently sellable';
+      this.app.journal.updateOpen(t.tradeId, { currentProfit, bestProfit: t.bestProfit, canSell, sellReason: t.sellReason });
+
+      let trigger = '';
+      if (currentProfit >= risk.fixedProfitClose) trigger = `Fixed profit close at ${fmtMoney(currentProfit, this.app.state.settings.currency)}`;
+      const pct = t.buyPrice ? (currentProfit / t.buyPrice) * 100 : 0;
+      if (!trigger && risk.pctProfitClose > 0 && pct >= risk.pctProfitClose) trigger = `Percentage profit close at ${fmtPct(pct)}`;
+      if (!trigger && risk.trailStart > 0 && t.bestProfit >= risk.trailStart && currentProfit <= t.bestProfit - risk.trailLock) trigger = `Trailing profit lock at ${fmtMoney(currentProfit, this.app.state.settings.currency)}`;
+      if (!trigger && risk.timeExit > 0) {
+        const elapsed = (Date.now() - t.openedAt) / 1000;
+        if (elapsed >= risk.timeExit) trigger = `Time-based exit requested after ${Math.round(elapsed)}s`;
+      }
+      if (trigger) {
+        if (!canSell) {
+          t.sellReason = 'Early close unavailable: broker reports contract cannot be sold now';
+          this.app.state.trade.active = deepClone(t);
+          this.app.refresh();
+          return;
+        }
+        if (this.sellAttempting) return;
+        this.sellAttempting = true;
+        this.app.log('info', 'exec', `Early sell attempt: ${trigger}`);
+        this.app.api.sell(t.contractId, Number.isFinite(sellPrice) ? sellPrice : undefined)
+          .then(resp => {
+            this.sellAttempting = false;
+            const sold = resp.sell || resp;
+            const soldPrice = toNum(sold.sell_price ?? sold.price ?? sellPrice, sellPrice);
+            const profit = toNum(sold.profit ?? sold.profit, currentProfit);
+            this.closeActiveTrade({
+              pnl: profit,
+              exitPrice: soldPrice,
+              reason: trigger,
+              sold: true,
+              response: sold
+            });
+          })
+          .catch(err => {
+            this.sellAttempting = false;
+            t.sellReason = `Sell attempt failed: ${err.message}`;
+            this.app.log('warn', 'exec', t.sellReason);
+            this.noteAnomaly(`Sell failed: ${err.message}`);
+            this.app.state.trade.active = deepClone(t);
+            this.app.refresh();
+          });
+      }
+    }
+
+    closeActiveTrade({pnl, exitPrice, reason, sold = false, shadow = false, response = null}){
+      const t = this.active;
+      if (!t) return;
+      const closed = {
+        pnl: toNum(pnl, 0),
+        exitPrice: toNum(exitPrice, 0),
+        closedAt: Date.now(),
+        reason,
+        sold,
+        shadow,
+        response
+      };
+      this.app.journal.close(t.tradeId, closed);
+      this.app.risk.updateAfterClose({...t, pnl: closed.pnl});
+      this.app.adaptive.update({
+        regime: t.regime,
+        signal: this.app.state.trade.lastSignal,
+        profit: closed.pnl,
+        confidence: this.app.state.trade.lastSignal?.confidence || 0,
+        cfg: this.app.state.settings.strategy
+      });
+      this.app.log(closed.pnl >= 0 ? 'ok' : 'warn', 'trade', `${shadow ? 'Shadow' : 'Live'} trade closed ${reason}; PnL ${fmtMoney(closed.pnl, this.app.state.settings.currency)}`);
+      this.app.state.trade.lastClosed = { ...t, ...closed };
+      this.active = null;
+      this.app.state.trade.active = null;
+      this.app.state.contract = null;
+      this.app.state.contractStatus = { canSell:false, sellReason:'No active contract' };
+      this.app.refresh();
+    }
+
+    finalizeFromContract(contract){
+      if (!this.active || this.active.shadow) return;
+      const t = this.active;
+      const isClosed = !!contract.is_sold || String(contract.status || '').toLowerCase() === 'sold' || String(contract.status || '').toLowerCase() === 'expired';
+      const currentProfit = toNum(contract.profit ?? contract.current_spot_profit ?? 0, 0);
+      const currentSell = toNum(contract.sell_price ?? contract.sell_price, NaN);
+      const canSell = !!(contract.is_valid_to_sell ?? contract.can_sell ?? false) && !contract.is_sold && String(contract.status || '').toLowerCase() === 'open';
+      t.currentProfit = currentProfit;
+      t.bestProfit = Math.max(t.bestProfit || 0, currentProfit);
+      t.canSell = canSell;
+      t.sellReason = canSell ? 'Sell available' : 'Sell unavailable or not supported';
+      this.app.journal.updateOpen(t.tradeId, { currentProfit, bestProfit: t.bestProfit, canSell, sellReason: t.sellReason });
+
+      if (isClosed) {
+        const exitPrice = Number.isFinite(currentSell) ? currentSell : 0;
+        const profit = toNum(contract.profit ?? currentProfit, currentProfit);
+        this.closeActiveTrade({
+          pnl: profit,
+          exitPrice,
+          reason: String(contract.status || 'Closed'),
+          sold: !!contract.is_sold,
+          response: contract
+        });
+      } else {
+        this.app.state.trade.active = deepClone(t);
+        this.app.state.contract = deepClone(contract);
+        this.app.state.contractStatus = { canSell, sellReason: t.sellReason };
+        this.maybeManageLive();
+        this.app.refresh();
+      }
+    }
+
+    manualClose(){
+      const t = this.active;
+      if (!t) return;
+      if (t.shadow) {
+        const nowPrice = this.app.buffer.currentPrice();
+        const profit = t.direction === 'CALL' ? (nowPrice - t.entryPrice) : (t.entryPrice - nowPrice);
+        this.closeActiveTrade({
+          pnl: profit,
+          exitPrice: nowPrice,
+          reason: 'Manual shadow close',
+          shadow: true,
+          sold: true
+        });
         return;
       }
-    }
-
-    requestProposal(signal);
-    updateUI();
-  }
-
-  function manualTrade() {
-    syncFromInputs();
-    if (!isConnected) { setMessage('Connect first.', 'error'); return; }
-    if (isTradeOpen || awaitingProposal) { setMessage('Trade already in progress.', 'warn'); return; }
-    const signal = evaluateSignal();
-    if (!signal) { setMessage('No valid signal right now.', 'warn'); return; }
-    lastSignal = signal;
-    metrics.lastConfidence = signal.confidence;
-    ui.signalLabel.textContent = `${signal.direction} • ${(signal.confidence * 100).toFixed(0)}%`;
-    ui.aiConfidence.textContent = `${(signal.confidence * 100).toFixed(0)}%`;
-    if (settings.confirmTrades && !confirm(`Execute ${signal.direction} trade now?`)) return;
-    requestProposal(signal);
-    updateUI();
-  }
-
-  function toggleBot() {
-    syncFromInputs();
-    if (!isConnected) { setMessage('Connect first.', 'error'); return; }
-    if (!isRunning) {
-      if (!confirm('Start MarsBot?')) return;
-      if (metrics.mode === 'STOPPED' && metrics.sessionLoss >= settings.sessionLossLimit) {
-        setMessage('Reset the session before starting again.', 'error');
+      const c = this.app.state.contract;
+      if (!c || !(c.is_valid_to_sell ?? c.can_sell ?? false)) {
+        this.app.log('warn', 'exec', 'Manual close unavailable: live contract is not sellable now');
         return;
       }
-      isRunning = true;
-      metrics.mode = 'NORMAL';
-      setChip('Running', 'success');
-      setMessage('Bot started.', 'success');
-    } else {
-      if (!confirm('Stop MarsBot?')) return;
-      isRunning = false;
-      metrics.mode = 'STOPPED';
-      setChip('Stopped', 'info');
-      setMessage('Bot stopped.', 'warn');
+      const sellPrice = toNum(c.sell_price ?? c.sell_price, undefined);
+      this.app.api.sell(t.contractId, Number.isFinite(sellPrice) ? sellPrice : undefined)
+        .then(resp => {
+          const sold = resp.sell || resp;
+          const soldPrice = toNum(sold.sell_price ?? sold.price ?? sellPrice, sellPrice || 0);
+          const profit = toNum(sold.profit ?? c.profit ?? 0, 0);
+          this.closeActiveTrade({
+            pnl: profit,
+            exitPrice: soldPrice,
+            reason: 'Manual close',
+            sold: true,
+            response: sold
+          });
+        })
+        .catch(err => {
+          this.app.log('error', 'exec', `Manual close failed: ${err.message}`);
+          this.noteAnomaly(`Manual close failed: ${err.message}`);
+        });
     }
-    saveState();
-    updateUI();
-    if (isRunning) runBot();
   }
 
-  function disconnectDeriv() {
-    if (!confirm('Disconnect MarsBot from Deriv?')) return;
-    try { if (ws) ws.close(); } catch (_) {}
-    ws = null;
-    isConnected = false;
-    isAuthorized = false;
-    isRunning = false;
-    isTradeOpen = false;
-    isAuthorized = false;
-    awaitingProposal = false;
-    currentContractId = null;
-    currentTrade = null;
-    metrics.mode = 'STOPPED';
-    setChip('Disconnected', 'info');
-    setMessage('Disconnected.', 'warn');
-    updateUI();
+  class UIController {
+    constructor(app){
+      this.app = app;
+      this.bindStatic();
+    }
+
+    bindStatic(){
+      const tabs = Array.from(document.querySelectorAll('.tabbtn'));
+      tabs.forEach(btn => btn.addEventListener('click', () => this.switchTab(btn.dataset.tab)));
+
+      $('btnConnect').addEventListener('click', async () => {
+        try {
+          this.app.api.autoReconnect = this.app.state.settings.risk.autoReconnect;
+          await this.app.api.connect($('wsEndpoint').value.trim(), toInt($('appId').value, DEFAULTS.appId));
+          this.app.state.connection.targetEndpoint = $('wsEndpoint').value.trim();
+          this.app.state.connection.appId = toInt($('appId').value, DEFAULTS.appId);
+          this.app.state.connection.status = 'connected';
+          this.app.refresh();
+        } catch (err) {
+          this.app.log('error', 'ws', `Connect failed: ${err.message}`);
+        }
+      });
+
+      $('btnAuthorize').addEventListener('click', async () => {
+        const token = $('apiToken').value.trim();
+        if (!token) return this.app.log('warn', 'auth', 'Token is empty');
+        try {
+          await this.app.api.authorize(token);
+        } catch (err) {
+          this.app.log('error', 'auth', `Authorization failed: ${err.message}`);
+        }
+      });
+
+      $('btnTheme').addEventListener('click', () => document.body.classList.toggle('light'));
+      $('btnHelp').addEventListener('click', () => $('helpOverlay').classList.add('open'));
+      $('btnCloseHelp').addEventListener('click', () => $('helpOverlay').classList.remove('open'));
+
+      $('btnArm').addEventListener('click', () => {
+        this.app.state.settings.risk.liveArmed = !this.app.state.settings.risk.liveArmed;
+        this.app.log('info', 'risk', `Live arm ${this.app.state.settings.risk.liveArmed ? 'enabled' : 'disabled'}`);
+        this.app.refresh();
+      });
+      $('btnAuto').addEventListener('click', () => {
+        this.app.state.run.auto = !this.app.state.run.auto;
+        this.app.log('info', 'run', `Auto mode ${this.app.state.run.auto ? 'enabled' : 'disabled'}`);
+        this.app.refresh();
+      });
+      $('btnPause').addEventListener('click', () => {
+        this.app.state.run.paused = !this.app.state.run.paused;
+        this.app.log('info', 'run', this.app.state.run.paused ? 'Paused' : 'Resumed');
+        this.app.refresh();
+      });
+      $('btnStopNew').addEventListener('click', () => {
+        this.app.state.run.stopNew = !this.app.state.run.stopNew;
+        this.app.log('warn', 'run', this.app.state.run.stopNew ? 'New trades blocked' : 'New trades allowed');
+        this.app.refresh();
+      });
+      $('btnPanic').addEventListener('click', () => this.app.panicStop());
+      $('btnReset').addEventListener('click', () => this.app.resetSession());
+      $('btnCall').addEventListener('click', () => this.app.execution.manual('CALL'));
+      $('btnPut').addEventListener('click', () => this.app.execution.manual('PUT'));
+      $('btnClose').addEventListener('click', () => this.app.execution.manualClose());
+      $('btnClearLogs').addEventListener('click', () => { this.app.state.logs = []; this.app.refresh(); });
+      $('btnReconnect').addEventListener('click', async () => {
+        try {
+          await this.app.api.connect($('wsEndpoint').value.trim(), toInt($('appId').value, DEFAULTS.appId));
+          if (this.app.api.token) await this.app.api.authorize(this.app.api.token);
+        } catch (err) {
+          this.app.log('error', 'ws', `Reconnect failed: ${err.message}`);
+        }
+      });
+      $('btnRunSim').addEventListener('click', () => this.app.runSimulation());
+      $('btnClearSim').addEventListener('click', () => this.app.clearSimulation());
+
+      document.querySelectorAll('input,select,textarea').forEach(el => {
+        el.addEventListener('change', () => {
+          this.app.readUiToState();
+          this.app.refresh();
+        });
+        el.addEventListener('input', () => {
+          this.app.readUiToState();
+          this.app.refresh(true);
+        });
+      });
+    }
+
+    switchTab(name){
+      document.querySelectorAll('.tabbtn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+      document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(`tab-${name}`);
+      if (target) target.classList.add('active');
+    }
+
+    render(){
+      const state = this.app.state;
+      const mode = state.settings.accountMode;
+      const connected = this.app.api.connected;
+      const authorized = this.app.api.authorized;
+      const activeTrade = state.trade.active;
+      const running = state.run.auto && !state.run.paused && !state.run.stopNew && !state.risk.lockout;
+      const cooldown = Date.now() < this.app.risk.session.nextTradeAt;
+
+      this.setChip('chipConn', connected ? 'Connected' : 'Disconnected', connected ? 'good' : 'info', connected);
+      this.setChip('chipAuth', authorized ? 'Authorized' : 'Unauthorized', authorized ? 'good' : 'bad', authorized);
+      this.setChip('chipMode', mode === 'live' ? 'Live' : 'Demo', mode === 'live' ? 'bad' : 'info', true);
+      this.setChip('chipRun', this.app.state.run.auto ? (state.run.paused ? 'Auto paused' : 'Auto on') : 'Idle', this.app.state.run.auto && !state.run.paused ? 'good' : 'warn', true);
+      this.setChip('chipArmed', state.settings.risk.liveArmed ? 'Armed' : 'Unarmed', state.settings.risk.liveArmed ? 'good' : 'warn', true);
+      this.setChip('chipPause', state.run.paused ? 'Paused' : 'Running', state.run.paused ? 'warn' : 'good', true);
+      this.setChip('chipCooldown', cooldown ? 'Cooldown' : 'Ready', cooldown ? 'warn' : 'good', true);
+      this.setChip('chipLock', state.risk.lockout ? 'Lockout' : 'Unlocked', state.risk.lockout ? 'bad' : 'good', true);
+
+      $('sessionHint').textContent = state.connection.status ? `${state.connection.status.toUpperCase()} • ${state.settings.symbol}` : 'Waiting for connection';
+      $('metricBalance').textContent = `Balance: ${fmtMoney(state.account.balance || this.app.risk.session.startBalance || 0, state.settings.currency)}`;
+      const eq = (state.account.balance || this.app.risk.session.startBalance || 0) + (activeTrade ? toNum(activeTrade.currentProfit, 0) : 0);
+      $('metricEquity').textContent = fmtMoney(eq, state.settings.currency);
+      $('metricPnL').textContent = fmtMoney(this.app.risk.session.realizedPnL, state.settings.currency);
+      $('metricPnlSub').textContent = `Peak equity ${fmtMoney(this.app.risk.session.peakEquity, state.settings.currency)}`;
+      $('metricWinRate').textContent = `${fmtPct(this.app.journal.summary().winRate || 0)}`;
+      $('metricTrades').textContent = `${this.app.risk.session.tradeCount}`;
+      $('metricCap').textContent = `Cap ${state.settings.risk.dailyCap} / day`;
+
+      $('sigRegime').textContent = state.trade.lastSignal ? state.trade.lastSignal.regime.toUpperCase() : '—';
+      $('sigBias').textContent = state.trade.lastSignal ? `${state.trade.lastSignal.bias} • ${fmtNum(state.trade.lastSignal.confidence, 1)}%` : '—';
+      $('sigHealth').textContent = this.app.buffer.isHealthy() ? 'Healthy' : 'Stale';
+      $('sigWarmup').textContent = this.app.buffer.warmupOk(state.riskMinCandles, state.riskMinTicks) ? 'Warm' : `Need ${Math.max(0, state.riskMinCandles - this.app.buffer.candles.length)} candles`;
+      $('signalHeader').textContent = state.trade.lastSignal ? state.trade.lastSignal.regimeReason : 'No signal yet';
+      this.renderSignalExplain(state.trade.lastSignal);
+      this.renderGates(state.gates);
+      this.renderOpenContract();
+      this.renderRiskSummary();
+      this.renderWeights();
+      this.renderRegimeStats();
+      this.renderBlotter();
+      this.renderStatsSummary();
+      this.renderPerfTable();
+      this.renderLogs();
+      this.renderExecBox();
+      this.renderSimStats();
+      this.drawPriceChart();
+      this.drawSimChart();
+      $('btnArm').textContent = state.settings.risk.liveArmed ? 'Armed' : 'Arm Live';
+      $('btnAuto').textContent = `Auto: ${state.run.auto ? 'On' : 'Off'}`;
+      $('btnPause').textContent = state.run.paused ? 'Resume' : 'Pause';
+      $('btnStopNew').textContent = state.run.stopNew ? 'Allow New' : 'Stop New';
+      $('btnClose').disabled = !state.trade.active;
+      $('btnCall').disabled = !connected;
+      $('btnPut').disabled = !connected;
+      $('btnPanic').disabled = !connected && !state.trade.active;
+      $('btnArm').classList.toggle('good', state.settings.risk.liveArmed);
+      $('btnArm').classList.toggle('warn', !state.settings.risk.liveArmed);
+    }
+
+    setChip(id, text, tone, active){
+      const el = $(id);
+      if (!el) return;
+      el.innerHTML = `<strong>${text}</strong>`;
+      el.classList.toggle('active', !!active);
+      el.dataset.tone = tone;
+    }
+
+    renderSignalExplain(signal){
+      const box = $('signalExplain');
+      if (!signal || !signal.explanation) {
+        box.innerHTML = '<div class="small muted">No signal data yet.</div>';
+        return;
+      }
+      const html = signal.explanation.map(e => `
+        <div class="check-item ${signal.bias === e.value ? 'pass' : 'info'}" style="margin-bottom:8px">
+          <div class="l">
+            <div class="t">${e.name}</div>
+            <div class="small">${e.detail}</div>
+          </div>
+          <div class="r mono">${e.value}</div>
+        </div>`).join('');
+      box.innerHTML = html;
+    }
+
+    renderGates(gates){
+      const box = $('gateList');
+      if (!gates || !gates.length) {
+        box.innerHTML = '<div class="small muted">No readiness data yet.</div>';
+        return;
+      }
+      box.innerHTML = gates.map(g => `
+        <div class="check-item ${g.pass ? 'pass' : 'fail'}">
+          <div class="l">
+            <div class="t">${g.label}</div>
+            <div class="small">${g.key}</div>
+          </div>
+          <div class="r">${g.reason}</div>
+        </div>
+      `).join('');
+    }
+
+    renderOpenContract(){
+      const box = $('openContractBox');
+      const t = this.app.state.trade.active;
+      if (!t) {
+        box.className = 'note';
+        box.innerHTML = 'No active live or shadow contract.';
+        $('openContractHint').textContent = 'No active contract';
+        $('execSell').textContent = 'Unavailable';
+        $('execState').textContent = 'Idle';
+        return;
+      }
+      const c = this.app.state.contract || {};
+      const canSell = !!(t.canSell || c.is_valid_to_sell || c.can_sell);
+      const profit = toNum(t.currentProfit, 0);
+      const best = toNum(t.bestProfit, 0);
+      const exitHint = canSell ? 'Sell available' : (t.sellReason || 'Early close unavailable');
+      $('openContractHint').textContent = canSell ? 'Sell supported' : 'Sell unavailable';
+      $('execSell').textContent = canSell ? 'Available' : 'Not available';
+      $('execState').textContent = t.shadow ? 'Shadow trade' : 'Live contract';
+      box.className = canSell ? 'note' : 'danger-note';
+      box.innerHTML = `
+        <div class="grid-2">
+          <div class="kv"><div class="k">Trade ID</div><div class="v mono">${t.tradeId || '—'}</div></div>
+          <div class="kv"><div class="k">Contract ID</div><div class="v mono">${t.contractId || 'Shadow'}</div></div>
+          <div class="kv"><div class="k">Direction</div><div class="v">${t.direction || '—'}</div></div>
+          <div class="kv"><div class="k">Stake</div><div class="v">${fmtMoney(t.stake || 0, this.app.state.settings.currency)}</div></div>
+          <div class="kv"><div class="k">Entry price</div><div class="v mono">${fmtNum(t.entryPrice, 5)}</div></div>
+          <div class="kv"><div class="k">Current profit</div><div class="v mono">${fmtMoney(profit, this.app.state.settings.currency)}</div></div>
+          <div class="kv"><div class="k">Best profit</div><div class="v mono">${fmtMoney(best, this.app.state.settings.currency)}</div></div>
+          <div class="kv"><div class="k">Early close</div><div class="v">${exitHint}</div></div>
+        </div>
+      `;
+      $('execDuration').textContent = `${t.duration}${t.durationUnit}`;
+      $('execStake').textContent = `${this.app.state.settings.risk.stakeMode === 'pct' ? 'Pct' : 'Fixed'} • ${fmtMoney(this.app.risk.currentStake(), this.app.state.settings.currency)}`;
+    }
+
+    renderRiskSummary(){
+      const box = $('riskSummaryBox');
+      const s = this.app.state.settings.risk;
+      const dd = this.app.risk.drawdownPct();
+      const lock = this.app.risk.session.lockout ? `Lockout: ${this.app.risk.session.lockoutReason}` : 'No lockout';
+      box.innerHTML = `
+        <div class="grid-2">
+          <div class="kv"><div class="k">Daily trades</div><div class="v">${this.app.risk.session.tradeCount}/${s.dailyCap}</div></div>
+          <div class="kv"><div class="k">Consecutive losses</div><div class="v">${this.app.risk.session.consecutiveLosses}/${s.maxLosses}</div></div>
+          <div class="kv"><div class="k">Cooldown</div><div class="v">${Date.now() < this.app.risk.session.nextTradeAt ? `Active (${Math.ceil((this.app.risk.session.nextTradeAt - Date.now())/1000)}s)` : 'None'}</div></div>
+          <div class="kv"><div class="k">Drawdown</div><div class="v">${fmtPct(dd,1)} / ${fmtPct(s.maxDrawdown,1)}</div></div>
+          <div class="kv"><div class="k">Daily P&amp;L</div><div class="v">${fmtMoney(this.app.risk.session.realizedPnL, this.app.state.settings.currency)}</div></div>
+          <div class="kv"><div class="k">Lockout</div><div class="v">${lock}</div></div>
+        </div>
+      `;
+      $('riskStartEquity').textContent = fmtMoney(this.app.risk.session.startBalance, this.app.state.settings.currency);
+      $('riskPeakEquity').textContent = fmtMoney(this.app.risk.session.peakEquity, this.app.state.settings.currency);
+      $('riskDrawdown').textContent = fmtPct(dd,1);
+      $('riskLockout').textContent = lock;
+    }
+
+    renderWeights(){
+      const box = $('weightsBox');
+      const snap = this.app.adaptive.snapshot();
+      const labels = { ema:'EMA', rsi:'RSI', macd:'MACD', bb:'Bollinger', adx:'ADX', mom:'Momentum' };
+      box.innerHTML = Object.entries(snap.weights).map(([regime, row]) => `
+        <div class="weight-box">
+          <h4>${regime.toUpperCase()}</h4>
+          ${Object.entries(row).map(([k, v]) => `<div class="weight-row"><div>${labels[k] || k}</div><div class="n">${fmtNum(v,3)}</div></div>`).join('')}
+        </div>
+      `).join('');
+    }
+
+    renderRegimeStats(){
+      const tbody = $('regimeStatsTable');
+      const snap = this.app.adaptive.snapshot();
+      const rows = Object.entries(snap.stats).map(([regime, st]) => `
+        <tr>
+          <td>${regime.toUpperCase()}</td>
+          <td>${st.samples}</td>
+          <td>${fmtPct(st.winEma * 100,1)}</td>
+          <td>${fmtMoney(st.pnlEma, this.app.state.settings.currency)}</td>
+          <td>${st.samples < this.app.state.settings.strategy.minSamples ? 'Waiting for minimum samples' : 'Adaptive and capped drift enabled'}</td>
+        </tr>
+      `).join('');
+      tbody.innerHTML = rows;
+    }
+
+    renderBlotter(){
+      const tbody = $('blotterTable');
+      const trades = this.app.journal.trades.slice(0, 75);
+      if (!trades.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="muted">No trades yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = trades.map(t => `
+        <tr>
+          <td class="mono nowrap">${fmtDateTime(t.openedAt)}</td>
+          <td>${t.shadow ? 'Shadow' : t.mode}</td>
+          <td>${t.direction}</td>
+          <td>${t.regime || '—'}</td>
+          <td class="mono">${fmtMoney(t.stake, this.app.state.settings.currency)}</td>
+          <td class="mono">${fmtNum(t.entryPrice,5)}</td>
+          <td class="mono">${t.closedAt ? fmtNum(t.exitPrice,5) : '—'}</td>
+          <td class="mono ${t.pnl >= 0 ? 'ok' : 'bad'}">${fmtMoney(t.pnl || 0, this.app.state.settings.currency)}</td>
+          <td>${t.status}</td>
+          <td class="small">${t.note || t.sellReason || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    renderStatsSummary(){
+      const box = $('statsSummary');
+      const s = this.app.journal.summary();
+      box.innerHTML = `
+        <div class="kv"><div class="k">Closed trades</div><div class="v">${s.total}</div></div>
+        <div class="kv"><div class="k">Wins / losses</div><div class="v">${s.wins} / ${s.losses}</div></div>
+        <div class="kv"><div class="k">Profit factor</div><div class="v">${Number.isFinite(s.pf) ? fmtNum(s.pf,2) : '∞'}</div></div>
+        <div class="kv"><div class="k">Average win</div><div class="v">${fmtMoney(s.avgWin, this.app.state.settings.currency)}</div></div>
+        <div class="kv"><div class="k">Average loss</div><div class="v">${fmtMoney(s.avgLoss, this.app.state.settings.currency)}</div></div>
+        <div class="kv"><div class="k">Expectancy</div><div class="v">${fmtMoney(s.expectancy, this.app.state.settings.currency)}</div></div>
+        <div class="kv"><div class="k">Net P&amp;L</div><div class="v">${fmtMoney(s.net, this.app.state.settings.currency)}</div></div>
+        <div class="kv"><div class="k">Max DD</div><div class="v">${fmtMoney(s.maxDD, this.app.state.settings.currency)}</div></div>
+      `;
+    }
+
+    renderPerfTable(){
+      const tbody = $('perfTable');
+      const byRegime = this.app.journal.regimeStats();
+      const bySetup = this.app.journal.setupStats();
+      const rows = [];
+      for (const [k, v] of Object.entries(byRegime)) {
+        const wr = v.trades ? (v.wins / v.trades) * 100 : 0;
+        const exp = v.trades ? v.pnl / v.trades : 0;
+        rows.push(`<tr><td>${k.toUpperCase()}</td><td>${v.trades}</td><td>${fmtPct(wr,1)}</td><td>${fmtMoney(v.pnl, this.app.state.settings.currency)}</td><td>${fmtMoney(exp, this.app.state.settings.currency)}</td></tr>`);
+      }
+      for (const [k, v] of Object.entries(bySetup).slice(0, 8)) {
+        const wr = v.trades ? (v.wins / v.trades) * 100 : 0;
+        const exp = v.trades ? v.pnl / v.trades : 0;
+        rows.push(`<tr><td>${k}</td><td>${v.trades}</td><td>${fmtPct(wr,1)}</td><td>${fmtMoney(v.pnl, this.app.state.settings.currency)}</td><td>${fmtMoney(exp, this.app.state.settings.currency)}</td></tr>`);
+      }
+      tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5" class="muted">No performance data yet.</td></tr>';
+    }
+
+    renderLogs(){
+      const box = $('logBox');
+      if (!this.app.state.logs.length) {
+        box.innerHTML = '<div class="muted">No logs yet.</div>';
+        return;
+      }
+      box.innerHTML = this.app.state.logs.slice(-250).map(l => `
+        <div class="logline">
+          <span class="ts">${fmtTime(l.ts)}</span>
+          <span class="lv ${l.level}">[${l.level.toUpperCase()}]</span>
+          <span class="src">${l.src}</span>
+          <span class="msg"> ${l.msg}</span>
+        </div>
+      `).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    renderExecBox(){
+      const trade = this.app.state.trade.active;
+      $('execState').textContent = trade ? (trade.shadow ? 'Shadow' : 'Live') : 'Idle';
+      $('execDuration').textContent = `${this.app.state.settings.trade.durationAmount}${this.app.state.settings.trade.durationUnit}`;
+      $('execStake').textContent = `${this.app.state.settings.risk.stakeMode === 'pct' ? 'Pct' : 'Fixed'} • ${fmtMoney(this.app.risk.currentStake(), this.app.state.settings.currency)}`;
+      $('execSell').textContent = trade ? (trade.shadow ? 'Simulated' : (trade.canSell ? 'Available' : 'Unavailable')) : 'Unavailable';
+    }
+
+    renderSimStats(){
+      const s = this.app.state.simulation.summary;
+      $('simWinRate').textContent = s ? fmtPct(s.winRate,1) : '—';
+      $('simPF').textContent = s ? (Number.isFinite(s.profitFactor) ? fmtNum(s.profitFactor,2) : '∞') : '—';
+      $('simExpectancy').textContent = s ? fmtMoney(s.expectancy, this.app.state.settings.currency) : '—';
+      $('simDD').textContent = s ? fmtMoney(s.maxDrawdown, this.app.state.settings.currency) : '—';
+      $('simR20').textContent = s ? fmtMoney(s.rolling20.pnl, this.app.state.settings.currency) : '—';
+      $('simR50').textContent = s ? fmtMoney(s.rolling50.pnl, this.app.state.settings.currency) : '—';
+    }
+
+    drawPriceChart(){
+      const canvas = $('priceChart');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      const candles = this.app.buffer.candlesRecent(120);
+      const cur = this.app.buffer.currentCandle;
+      const series = candles.map(c => c.close).concat(cur ? [cur.close] : []);
+      if (series.length < 2) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted');
+        ctx.font = '16px var(--sans)';
+        ctx.fillText('Waiting for buffered market data...', 20, 30);
+        return;
+      }
+      const min = Math.min(...series), max = Math.max(...series);
+      const pad = (max-min) * 0.08 || 1;
+      const lo = min - pad, hi = max + pad;
+      const xStep = (w - 40) / (series.length - 1);
+      const y = v => h - 24 - ((v - lo) / (hi - lo)) * (h - 48);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#6ea8ff';
+      ctx.beginPath();
+      series.forEach((v, i) => {
+        const x = 20 + xStep * i;
+        const yy = y(v);
+        if (i === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+      });
+      ctx.stroke();
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted').trim() || '#8fa3c6';
+      ctx.font = '12px var(--mono)';
+      ctx.fillText(`Low ${fmtNum(lo, 4)}  High ${fmtNum(hi, 4)}  Last ${fmtNum(series[series.length - 1], 4)}`, 20, 18);
+    }
+
+    drawSimChart(){
+      const canvas = $('simChart');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      const equity = this.app.state.simulation.equity || [];
+      if (equity.length < 2) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted');
+        ctx.font = '16px var(--sans)';
+        ctx.fillText('Run replay to draw an equity curve.', 20, 30);
+        return;
+      }
+      const min = Math.min(...equity), max = Math.max(...equity);
+      const pad = (max-min) * 0.1 || 1;
+      const lo = min - pad, hi = max + pad;
+      const xStep = (w - 40) / (equity.length - 1);
+      const y = v => h - 24 - ((v - lo) / (hi - lo)) * (h - 48);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--good').trim() || '#2fd081';
+      ctx.beginPath();
+      equity.forEach((v, i) => {
+        const x = 20 + xStep * i;
+        const yy = y(v);
+        if (i === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+      });
+      ctx.stroke();
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted').trim() || '#8fa3c6';
+      ctx.font = '12px var(--mono)';
+      ctx.fillText(`Equity low ${fmtNum(lo,2)}  high ${fmtNum(hi,2)}  points ${equity.length}`, 20, 18);
+    }
   }
 
-  function resetBot() {
-    if (!confirm('Reset all stats, learning memory, and chart history?')) return;
-    prices = [];
-    tradeMarkers = [];
-    tradeHistory = [];
-    aiMemory = { patterns: {} };
-    optimiserHistory = [];
-    metrics = {
-      trades: 0,
-      wins: 0,
-      profit: 0,
-      sessionPnL: 0,
-      sessionLoss: 0,
-      lossStreak: 0,
-      martingaleStep: 0,
-      mode: isRunning ? 'NORMAL' : 'STOPPED',
-      lastConfidence: 0
-    };
-    currentStake = settings.stake;
-    liveOpenProfit = 0;
-    currentTrade = null;
-    currentContractId = null;
-    awaitingProposal = false;
-    cooldownUntil = 0;
-    lastTradeAt = 0;
-    lastSignal = null;
-    ui.signalLabel.textContent = 'Waiting';
-    setMessage('Bot reset complete.', 'success');
-    saveState();
-    renderHistory();
-    resizeChart();
-    updateUI();
+  class App {
+    constructor(){
+      this.state = {
+        connection: { status: 'disconnected', targetEndpoint: DEFAULTS.endpoint, appId: DEFAULTS.appId },
+        account: { balance: 0, currency: DEFAULTS.currency, loginid: '', accountType: 'demo' },
+        settings: {
+          accountMode: DEFAULTS.mode,
+          symbol: DEFAULTS.symbol,
+          currency: DEFAULTS.currency,
+          trade: { durationAmount: 5, durationUnit: 't' },
+          strategy: deepClone(defaultStrategy),
+          risk: deepClone(defaultRisk),
+        },
+        riskMinCandles: 80,
+        riskMinTicks: 200,
+        run: { auto: false, paused: false, stopNew: false },
+        trade: { active: null, lastSignal: null, lastClosed: null },
+        contract: null,
+        contractStatus: { canSell: false, sellReason: 'No active contract' },
+        gates: [],
+        logs: [],
+        simulation: { summary: null, equity: [] }
+      };
+
+      this.buffer = new MarketDataBuffer();
+      this.indicators = new IndicatorEngine();
+      this.regime = new RegimeClassifier();
+      this.adaptive = new AdaptiveWeightEngine();
+      this.signalEngine = new SignalEngine(this.indicators, this.regime, this.adaptive);
+      this.journal = new TradeJournal();
+      this.api = new DerivAPIClient(this);
+      this.risk = new RiskEngine(this);
+      this.execution = new ExecutionEngine(this);
+      this.ui = new UIController(this);
+      this.initUiFromState();
+      this.bindApi();
+      this.refresh();
+      setInterval(() => this.refresh(), 600);
+    }
+
+    bindApi(){
+      this.api.on('open', () => {
+        this.state.connection.status = 'connected';
+        this.log('info', 'ws', 'Connection opened');
+        this.refresh();
+      });
+      this.api.on('close', () => {
+        this.state.connection.status = 'disconnected';
+        this.state.trade.active = this.state.trade.active; // keep open state visible if reconnect occurs
+        this.state.contract = null;
+        this.log('warn', 'ws', 'Connection closed');
+        this.refresh();
+      });
+      this.api.on('error', () => {
+        this.log('error', 'ws', 'Transport error');
+        this.refresh();
+      });
+    }
+
+    initUiFromState(){
+      $('wsEndpoint').value = this.state.connection.targetEndpoint;
+      $('appId').value = this.state.connection.appId;
+      $('currency').value = this.state.settings.currency;
+      $('symbol').value = this.state.settings.symbol;
+      $('accountMode').value = this.state.settings.accountMode;
+      $('shadowMode').value = this.state.settings.risk.shadowMode ? 'on' : 'off';
+      $('autoReconnect').value = this.state.settings.risk.autoReconnect ? 'on' : 'off';
+      $('emaFast').value = this.state.settings.strategy.emaFast;
+      $('emaSlow').value = this.state.settings.strategy.emaSlow;
+      $('rsiPeriod').value = this.state.settings.strategy.rsiPeriod;
+      $('macdFast').value = this.state.settings.strategy.macdFast;
+      $('macdSlow').value = this.state.settings.strategy.macdSlow;
+      $('macdSignal').value = this.state.settings.strategy.macdSignal;
+      $('bbPeriod').value = this.state.settings.strategy.bbPeriod;
+      $('bbStd').value = this.state.settings.strategy.bbStd;
+      $('atrPeriod').value = this.state.settings.strategy.atrPeriod;
+      $('adxPeriod').value = this.state.settings.strategy.adxPeriod;
+      $('momLookback').value = this.state.settings.strategy.momLookback;
+      $('trendAdx').value = this.state.settings.strategy.trendAdx;
+      $('chopAdx').value = this.state.settings.strategy.chopAdx;
+      $('noiseAtrPct').value = this.state.settings.strategy.noiseAtrPct;
+      $('learningRate').value = this.state.settings.strategy.learningRate;
+      $('minSamples').value = this.state.settings.strategy.minSamples;
+      $('maxDrift').value = this.state.settings.strategy.maxDrift;
+      $('weightDecay').value = this.state.settings.strategy.weightDecay;
+      $('stakeMode').value = this.state.settings.risk.stakeMode;
+      $('fixedStake').value = this.state.settings.risk.fixedStake;
+      $('stakePct').value = this.state.settings.risk.stakePct;
+      $('maxStake').value = this.state.settings.risk.maxStake;
+      $('dailyCap').value = this.state.settings.risk.dailyCap;
+      $('cooldownSec').value = this.state.settings.risk.cooldownSec;
+      $('maxLosses').value = this.state.settings.risk.maxLosses;
+      $('maxDrawdown').value = this.state.settings.risk.maxDrawdown;
+      $('dailyLoss').value = this.state.settings.risk.dailyLoss;
+      $('dailyProfit').value = this.state.settings.risk.dailyProfit;
+      $('allowConcurrent').value = this.state.settings.risk.allowConcurrent ? 'yes' : 'no';
+      $('confidenceThreshold').value = this.state.settings.risk.confidenceThreshold;
+      $('earlyClose').value = this.state.settings.risk.earlyClose ? 'yes' : 'no';
+      $('fixedProfitClose').value = this.state.settings.risk.fixedProfitClose;
+      $('pctProfitClose').value = this.state.settings.risk.pctProfitClose;
+      $('trailStart').value = this.state.settings.risk.trailStart;
+      $('trailLock').value = this.state.settings.risk.trailLock;
+      $('timeExit').value = this.state.settings.risk.timeExit;
+      $('martingale').value = this.state.settings.risk.martingale ? 'on' : 'off';
+      $('martFactor').value = this.state.settings.risk.martFactor;
+      $('martSteps').value = this.state.settings.risk.martSteps;
+      $('timeFrom').value = this.state.settings.risk.timeFrom;
+      $('timeTo').value = this.state.settings.risk.timeTo;
+      $('btnAuto').textContent = `Auto: ${this.state.run.auto ? 'On' : 'Off'}`;
+    }
+
+    readUiToState(){
+      const s = this.state.settings;
+      s.connection = s.connection || {};
+      s.accountMode = $('accountMode').value;
+      s.currency = $('currency').value.trim() || DEFAULTS.currency;
+      s.symbol = $('symbol').value.trim() || DEFAULTS.symbol;
+      this.state.riskMinCandles = 80;
+      this.state.riskMinTicks = 200;
+      s.strategy.emaFast = toInt($('emaFast').value, s.strategy.emaFast);
+      s.strategy.emaSlow = toInt($('emaSlow').value, s.strategy.emaSlow);
+      s.strategy.rsiPeriod = toInt($('rsiPeriod').value, s.strategy.rsiPeriod);
+      s.strategy.macdFast = toInt($('macdFast').value, s.strategy.macdFast);
+      s.strategy.macdSlow = toInt($('macdSlow').value, s.strategy.macdSlow);
+      s.strategy.macdSignal = toInt($('macdSignal').value, s.strategy.macdSignal);
+      s.strategy.bbPeriod = toInt($('bbPeriod').value, s.strategy.bbPeriod);
+      s.strategy.bbStd = toNum($('bbStd').value, s.strategy.bbStd);
+      s.strategy.atrPeriod = toInt($('atrPeriod').value, s.strategy.atrPeriod);
+      s.strategy.adxPeriod = toInt($('adxPeriod').value, s.strategy.adxPeriod);
+      s.strategy.momLookback = toInt($('momLookback').value, s.strategy.momLookback);
+      s.strategy.trendAdx = toNum($('trendAdx').value, s.strategy.trendAdx);
+      s.strategy.chopAdx = toNum($('chopAdx').value, s.strategy.chopAdx);
+      s.strategy.noiseAtrPct = toNum($('noiseAtrPct').value, s.strategy.noiseAtrPct);
+      s.strategy.learningRate = toNum($('learningRate').value, s.strategy.learningRate);
+      s.strategy.minSamples = toInt($('minSamples').value, s.strategy.minSamples);
+      s.strategy.maxDrift = toNum($('maxDrift').value, s.strategy.maxDrift);
+      s.strategy.weightDecay = toNum($('weightDecay').value, s.strategy.weightDecay);
+
+      s.risk.stakeMode = $('stakeMode').value;
+      s.risk.fixedStake = toNum($('fixedStake').value, s.risk.fixedStake);
+      s.risk.stakePct = toNum($('stakePct').value, s.risk.stakePct);
+      s.risk.maxStake = toNum($('maxStake').value, s.risk.maxStake);
+      s.risk.dailyCap = toInt($('dailyCap').value, s.risk.dailyCap);
+      s.risk.cooldownSec = toInt($('cooldownSec').value, s.risk.cooldownSec);
+      s.risk.maxLosses = toInt($('maxLosses').value, s.risk.maxLosses);
+      s.risk.maxDrawdown = toNum($('maxDrawdown').value, s.risk.maxDrawdown);
+      s.risk.dailyLoss = toNum($('dailyLoss').value, s.risk.dailyLoss);
+      s.risk.dailyProfit = toNum($('dailyProfit').value, s.risk.dailyProfit);
+      s.risk.allowConcurrent = $('allowConcurrent').value === 'yes';
+      s.risk.confidenceThreshold = toInt($('confidenceThreshold').value, s.risk.confidenceThreshold);
+      s.risk.earlyClose = $('earlyClose').value === 'yes';
+      s.risk.fixedProfitClose = toNum($('fixedProfitClose').value, s.risk.fixedProfitClose);
+      s.risk.pctProfitClose = toNum($('pctProfitClose').value, s.risk.pctProfitClose);
+      s.risk.trailStart = toNum($('trailStart').value, s.risk.trailStart);
+      s.risk.trailLock = toNum($('trailLock').value, s.risk.trailLock);
+      s.risk.timeExit = toInt($('timeExit').value, s.risk.timeExit);
+      s.risk.martingale = $('martingale').value === 'on';
+      s.risk.martFactor = toNum($('martFactor').value, s.risk.martFactor);
+      s.risk.martSteps = toInt($('martSteps').value, s.risk.martSteps);
+      s.risk.timeFrom = $('timeFrom').value || '00:00';
+      s.risk.timeTo = $('timeTo').value || '23:59';
+      s.risk.shadowMode = $('shadowMode').value === 'on';
+      s.risk.autoReconnect = $('autoReconnect').value === 'on';
+    }
+
+    log(level, src, msg, data){
+      this.state.logs.push({ ts: Date.now(), level, src, msg, data });
+      if (this.state.logs.length > 300) this.state.logs.shift();
+      this.refresh(true);
+    }
+
+    refresh(light = false){
+      this.state.trade.lastSignal = this.signalEngine.evaluate(this.buffer.candlesRecent(400).concat(this.buffer.currentCandle ? [this.buffer.currentCandle] : []), this.state.settings.strategy);
+      if (this.state.trade.active && !this.state.trade.active.shadow && this.state.contract) {
+        this.execution.finalizeFromContract(this.state.contract);
+      }
+      this.ui.render();
+      if (!light) this.updateAutoFlow();
+    }
+
+    updateAutoFlow(){
+      if (!this.state.run.auto || this.state.run.paused || this.state.run.stopNew || this.risk.session.lockout) return;
+      if (this.state.settings.accountMode === 'live' && !this.state.settings.risk.liveArmed) return;
+      if (!this.buffer.warmupOk(this.state.riskMinCandles, this.state.riskMinTicks)) return;
+      if (!this.buffer.isHealthy()) return;
+      if (this.state.trade.active) return;
+      const sig = this.state.trade.lastSignal;
+      if (!sig || !sig.ready || sig.regime === 'no-trade' || sig.confidence < this.state.settings.risk.confidenceThreshold) return;
+      const now = Date.now();
+      if (now < this.risk.session.nextTradeAt) return;
+      this.execution.autoExecute(sig);
+    }
+
+    async onAuthorized(authorize){
+      this.state.account.loginid = authorize.loginid || '';
+      this.state.account.currency = authorize.currency || this.state.settings.currency || DEFAULTS.currency;
+      this.state.connection.status = 'authorized';
+      this.log('ok', 'auth', `Authorized as ${authorize.loginid || 'unknown'}`);
+      try {
+        const hist = await this.api.ticksHistory(this.state.settings.symbol, 300, 60);
+        this.onHistory(hist.history || hist);
+        await this.api.subscribeTicks(this.state.settings.symbol);
+        await this.api.subscribeBalance();
+      } catch (err) {
+        this.log('warn', 'data', `Warmup/subscriptions issue: ${err.message}`);
+      }
+      this.risk.setBalance(this.state.account.balance || 1000);
+      this.refresh();
+    }
+
+    onBalance(balance){
+      const amount = toNum(balance.balance ?? balance.amount ?? balance.available, this.state.account.balance || 0);
+      if (amount > 0) this.risk.setBalance(amount);
+      this.state.account.currency = balance.currency || this.state.account.currency;
+      this.log('info', 'acct', `Balance update ${fmtMoney(amount, this.state.account.currency)}`);
+      this.refresh(true);
+    }
+
+    onHistory(history){
+      const candles = history.candles || history.history?.candles || [];
+      if (Array.isArray(candles) && candles.length) {
+        this.buffer.ingestHistoryCandles(candles);
+        this.state.connection.status = this.api.authorized ? 'authorized' : this.state.connection.status;
+        this.log('info', 'data', `Loaded ${candles.length} historical candles`);
+        this.refresh(true);
+      }
+    }
+
+    onTick(tick){
+      const result = this.buffer.ingestTick(tick);
+      if (result.closedCandle) {
+        this.onCandleClose(result.closedCandle);
+      }
+      if (this.execution.active && this.execution.active.shadow) this.execution.evaluateShadow();
+      if (this.execution.active && !this.execution.active.shadow) this.execution.maybeManageLive();
+      this.refresh(true);
+    }
+
+    onCandleClose(candle){
+      this.log('info', 'data', `Candle closed ${new Date(candle.time).toLocaleTimeString()}`);
+      this.state.trade.lastSignal = this.signalEngine.evaluate(this.buffer.candlesRecent(400), this.state.settings.strategy);
+      if (this.execution.active && this.execution.active.shadow) this.execution.evaluateShadow();
+      this.updateAutoFlow();
+      this.refresh(true);
+    }
+
+    onOpenContract(contract){
+      const c = {
+        ...contract,
+        profit: toNum(contract.profit ?? contract.current_spot_profit ?? 0, 0),
+        sell_price: toNum(contract.sell_price ?? contract.sell_price, NaN),
+        can_sell: !!(contract.is_valid_to_sell ?? contract.can_sell ?? false)
+      };
+      this.state.contract = c;
+      if (this.execution.active && !this.execution.active.shadow) {
+        this.execution.active.currentProfit = c.profit;
+        this.execution.active.bestProfit = Math.max(this.execution.active.bestProfit || 0, c.profit);
+        this.execution.active.canSell = c.can_sell;
+        this.execution.active.sellReason = c.can_sell ? 'Sell available' : 'Sell unavailable';
+        this.state.trade.active = deepClone(this.execution.active);
+      }
+      this.state.contractStatus = {
+        canSell: c.can_sell,
+        sellReason: c.can_sell ? 'Sell available' : 'Sell unavailable on this contract'
+      };
+      this.log('info', 'contract', `Contract update: ${c.status || 'open'} profit ${fmtMoney(c.profit, this.state.settings.currency)}`);
+      if (this.execution.active && !this.execution.active.shadow) this.execution.finalizeFromContract(c);
+      this.refresh(true);
+    }
+
+    onBuy(buy){
+      const contractId = buy.contract_id || buy.contractId;
+      if (contractId) this.log('ok', 'buy', `Buy confirmed contract ${contractId}`);
+      else this.log('warn', 'buy', 'Buy response missing contract ID');
+      this.refresh(true);
+    }
+
+    panicStop(){
+      this.state.run.auto = false;
+      this.state.run.paused = true;
+      this.state.run.stopNew = true;
+      this.state.settings.risk.liveArmed = false;
+      this.state.risk.lockout = true;
+      this.state.risk.lockoutReason = 'Panic stop engaged';
+      this.log('error', 'run', 'Panic stop engaged');
+      if (this.execution.active && this.execution.active.shadow) {
+        this.execution.manualClose();
+      } else if (this.execution.active && this.state.contract && (this.state.contract.is_valid_to_sell ?? this.state.contract.can_sell ?? false)) {
+        this.execution.manualClose();
+      }
+      this.refresh();
+    }
+
+    resetSession(){
+      this.risk.resetSession();
+      this.state.run.paused = false;
+      this.state.run.stopNew = false;
+      this.state.risk.lockout = false;
+      this.state.risk.lockoutReason = '';
+      this.state.trade.lastClosed = null;
+      this.log('info', 'risk', 'Session state cleared');
+      this.refresh();
+    }
+
+    async connect(){
+      this.readUiToState();
+      try {
+        this.state.connection.status = 'connecting';
+        this.refresh(true);
+        await this.api.connect(this.state.settings.connection?.endpoint || $('wsEndpoint').value.trim(), toInt($('appId').value, DEFAULTS.appId));
+        this.state.connection.status = 'connected';
+        this.refresh(true);
+      } catch (err) {
+        this.state.connection.status = 'disconnected';
+        this.log('error', 'ws', `Connect failed: ${err.message}`);
+      }
+    }
+
+    async authorize(){
+      const token = $('apiToken').value.trim();
+      if (!token) return this.log('warn', 'auth', 'Token is empty');
+      this.readUiToState();
+      try {
+        await this.api.authorize(token);
+      } catch (err) {
+        this.log('error', 'auth', `Authorize failed: ${err.message}`);
+      }
+    }
+
+    async runSimulation(){
+      const candles = this.buffer.candles.slice();
+      const s = this.state.settings.strategy;
+      const r = this.state.settings.risk;
+      if (candles.length < 120) {
+        this.log('warn', 'sim', 'Not enough buffered candles for replay');
+        return;
+      }
+      const hold = Math.max(1, r.timeExit > 0 ? Math.round(r.timeExit / 60) : this.state.settings.trade.durationAmount);
+      const equity = [0];
+      const trades = [];
+      let net = 0, peak = 0, maxDD = 0;
+      for (let i = 90; i < candles.length - hold; i++) {
+        const slice = candles.slice(0, i + 1);
+        const sig = this.signalEngine.evaluate(slice, s);
+        if (!sig.ready || sig.regime === 'no-trade' || sig.confidence < r.confidenceThreshold) continue;
+        const entry = candles[i].close;
+        const exit = candles[i + hold].close;
+        const pnl = sig.bias === 'CALL' ? (exit - entry) : (entry - exit);
+        net += pnl;
+        peak = Math.max(peak, net);
+        maxDD = Math.max(maxDD, peak - net);
+        equity.push(net);
+        trades.push({ pnl, regime: sig.regime, bias: sig.bias, confidence: sig.confidence });
+      }
+      const wins = trades.filter(t => t.pnl > 0).length;
+      const losses = trades.filter(t => t.pnl < 0).length;
+      const grossWin = trades.filter(t => t.pnl > 0).reduce((a,b)=>a+b.pnl,0);
+      const grossLoss = Math.abs(trades.filter(t => t.pnl < 0).reduce((a,b)=>a+b.pnl,0));
+      const summary = {
+        total: trades.length,
+        wins,
+        losses,
+        winRate: trades.length ? wins / trades.length * 100 : 0,
+        profitFactor: grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : 0),
+        expectancy: trades.length ? net / trades.length : 0,
+        maxDrawdown: maxDD,
+        rolling20: this.journal.rolling(20),
+        rolling50: this.journal.rolling(50),
+        equity
+      };
+      this.state.simulation = { summary, equity };
+      this.log('info', 'sim', `Replay complete: ${trades.length} trades, net ${fmtMoney(net, this.state.settings.currency)}`);
+      this.refresh(true);
+    }
+
+    clearSimulation(){
+      this.state.simulation = { summary: null, equity: [] };
+      this.log('info', 'sim', 'Simulation cleared');
+      this.refresh(true);
+    }
   }
 
-  function bindEvents() {
-    const ids = ['appId','accessToken','symbol','stake','maxStake','duration','durationUnit','sessionLossLimit','cooldownMs','martingaleToggle','martingaleMultiplier','martingaleSteps','maxLossStreak','confirmTrades','soundAlerts','rsiBuy','rsiSell','volMin','confidenceThreshold','closeProfitTarget','closeLossTarget','closeOnProfit','closeOnLoss','useContractUpdate','maxExposurePct','currency'];
-    ids.forEach((id) => ui[id].addEventListener('change', () => { syncFromInputs(); updateUI(); }));
-    ui.connectBtn.addEventListener('click', connectDeriv);
-    ui.disconnectBtn.addEventListener('click', disconnectDeriv);
-    ui.startBtn.addEventListener('click', toggleBot);
-    ui.tradeNowBtn.addEventListener('click', manualTrade);
-    ui.resetBtn.addEventListener('click', resetBot);
-    ui.settingsToggle.addEventListener('click', () => ui.settingsPanel.classList.toggle('hidden'));
-    window.addEventListener('resize', resizeChart);
-  }
-
-  function init() {
-    loadState();
-    fillInputs();
-    bindEvents();
-    ui.connectionInfo.textContent = `Market: ${settings.symbol}`;
-    ui.statusMessage.textContent = 'Ready.';
-    updateOptimiserSummary();
-    updateRiskSummary();
-    renderHistory();
-    resizeChart();
-    updateUI();
-    saveState();
-  }
-
-  init();
+  const app = new App();
+  window.__derivBotApp = app;
+  app.state.settings.connection = { endpoint: $('wsEndpoint').value.trim(), appId: toInt($('appId').value, DEFAULTS.appId) };
+  app.refresh();
 })();
 </script>
 </body>
